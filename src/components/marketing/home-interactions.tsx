@@ -1,26 +1,13 @@
 "use client";
-import { useRef, useState, type ReactNode } from "react";
+import Link from "next/link";
+import { useState, type ReactNode } from "react";
 import { Brand, Icon } from "./brand";
-export function LaunchButton({ children, className = "" }: {
+export function LaunchButton({ children, className = "", href = "/signup" }: {
     children: ReactNode;
     className?: string;
+    href?: string;
 }) {
-    const dialog = useRef<HTMLDialogElement>(null);
-    return <>
-    <button type="button" onClick={() => dialog.current?.showModal()} className={className}>{children}</button>
-    <dialog ref={dialog} aria-label="Wedding accounts are coming soon" className="launch-dialog" onClick={(event) => { if (event.target === event.currentTarget)
-        dialog.current?.close(); }}>
-      <div className="p-7 sm:p-10">
-        <span className="text-label-sm uppercase tracking-widest text-primary">A little something to look forward to</span>
-        <h2 className="font-serif text-headline-md mt-4">Your wedding workspace is coming soon.</h2>
-        <p className="mt-4 text-on-surface-variant leading-7">Account creation and wedding setup are on the way. For now, explore a preview of how your plans will come together.</p>
-        <div className="mt-7 flex flex-wrap gap-3">
-          <a href="#preview" className="rounded bg-primary text-on-primary px-5 py-3 text-body-sm" onClick={() => dialog.current?.close()}>Explore the preview</a>
-          <button type="button" autoFocus className="rounded border border-outline-variant px-5 py-3 text-body-sm" onClick={() => dialog.current?.close()}>Close</button>
-        </div>
-      </div>
-    </dialog>
-  </>;
+    return <Link href={href} className={className}>{children}</Link>;
 }
 const links = [["Features", "features"], ["How it works", "how-it-works"], ["FAQ", "faq"]];
 export function Navigation() {
@@ -30,7 +17,7 @@ export function Navigation() {
       <Brand />
       <nav aria-label="Main navigation" className="hidden lg:flex gap-7 text-body-sm">{links.map(([label, id]) => <a key={id} href={`#${id}`} className="hover:text-primary">{label}</a>)}</nav>
       <div className="hidden md:flex items-center gap-5">
-        <LaunchButton className="text-body-sm px-3 py-3">Log in</LaunchButton>
+        <LaunchButton href="/login" className="text-body-sm px-3 py-3">Log in</LaunchButton>
         <LaunchButton className="rounded bg-primary text-on-primary px-5 py-3 text-body-sm hover:bg-primary-container">Create your wedding</LaunchButton>
       </div>
       <button type="button" className="lg:hidden h-11 w-11 flex items-center justify-center rounded border border-outline-variant" aria-label={open ? "Close navigation" : "Open navigation"} aria-expanded={open} aria-controls="mobile-navigation" onClick={() => setOpen(!open)}>
@@ -40,7 +27,7 @@ export function Navigation() {
     {open && <nav id="mobile-navigation" aria-label="Mobile navigation" className="lg:hidden border-t border-outline-variant/30 px-5 py-4 flex flex-col gap-1" onKeyDown={(event) => { if (event.key === "Escape")
             setOpen(false); }}>
       {links.map(([label, id]) => <a key={id} href={`#${id}`} onClick={() => setOpen(false)} className="py-3">{label}</a>)}
-      <LaunchButton className="md:hidden py-3 text-left">Log in</LaunchButton>
+      <LaunchButton href="/login" className="md:hidden py-3 text-left">Log in</LaunchButton>
       <LaunchButton className="md:hidden rounded bg-primary text-on-primary px-5 py-3 mt-2">Create your wedding</LaunchButton>
     </nav>}
   </header>;
@@ -59,7 +46,7 @@ export function GuestRsvpDemo() {
   </form>;
 }
 const faqs = [
-    ["Can I start planning my wedding here today?", "This is a preview of Make My Marriage. Accounts and wedding setup are coming next. The wedding names, events, expenses, and photos on this page are illustrative examples."],
+    ["Can I create an account today?", "Yes. You can create an account and return securely whenever you like. Wedding setup is the next feature in development, so the wedding names, events, expenses, and photos on this page remain illustrative examples."],
     ["Will guests need an app or an account?", "No. Guests will open their invitation link or scan its QR code in a mobile browser to see invited events, get directions, and respond."],
     ["Can we invite guests to some events and not others?", "Yes. Each guest will have a personal invitation showing only their assigned events. Responses and attendee counts will be recorded separately for each event."],
     ["How will parents and siblings collaborate?", "Admins will manage wedding settings and membership. Managers will help with events, guests, tasks, vendors, and expenses. Members will view shared details and update the status of tasks assigned to them."],

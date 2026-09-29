@@ -10,12 +10,18 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint . --max-warnings=0",
-    "typecheck": "next typegen && tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit",
+    "test": "vitest run",
+    "db:sync-indexes": "tsx scripts/sync-auth-indexes.ts"
   },
   "dependencies": {
+    "hash-wasm": "^4.12.0",
+    "mongoose": "^8.24.4",
     "next": "16.3.6",
     "react": "19.3.0",
-    "react-dom": "19.3.0"
+    "react-dom": "19.3.0",
+    "resend": "^6.30.0",
+    "zod": "^4.6.5"
   },
   "overrides": {
     "typescript-eslint": "8.46.4"
@@ -28,6 +34,8 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "16.3.6",
     "tailwindcss": "4.3.3",
-    "typescript": "~5.9.3"
+    "tsx": "^4.20.6",
+    "typescript": "~5.9.3",
+    "vitest": "^4.1.11"
   }
 }

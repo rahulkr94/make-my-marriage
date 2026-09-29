@@ -688,7 +688,7 @@ export default function Home() {
     <div className="flex flex-wrap items-center justify-center gap-space-md mt-space-md text-on-surface-variant font-label-sm text-label-sm">
     <span className="">Your wedding, thoughtfully organized</span>
     <span className="text-outline-variant">•</span>
-    <span className="">Accounts coming soon</span>
+    <span className="">Accounts are now available</span>
     </div>
     </div>
     </div>

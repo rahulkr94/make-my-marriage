@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
 **Last updated:** 29 September 2026  
-**Current phase:** Homepage complete; Accounts is next  
+**Current phase:** Accounts complete; Wedding workspace is next
 **Overall status:** Active development
 
 ## Purpose
@@ -18,7 +18,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | --- | --- | --- |
 | Application scaffold | Complete | Next.js App Router, TypeScript, Tailwind CSS, ESLint, repository structure, environment examples, and Webpack-based development/build scripts are in place. |
 | Public homepage | Complete | Responsive marketing page at `/` with navigation, hero, labeled sample wedding workspace, feature overview, four-step workflow, guest experience, family roles, gallery preview, FAQ, and closing call to action. |
-| Accounts | Not started | Signup, login, logout, and password reset. This is the next planned milestone. |
+| Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
 | Wedding workspace | Not started | Wedding setup, settings, member invitations, roles, and permissions. |
 | Events | Not started | Event creation and editing, venues, dates, directions, and live-stream links. |
 | Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
@@ -43,23 +43,55 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 ### Public homepage
 
 - Built the public landing page in `src/app/(marketing)/page.tsx`.
-- Added reusable marketing components for branding, navigation, account-coming-
-  soon dialogs, the sample RSVP interaction, and FAQs.
+- Added reusable marketing components for branding, navigation, account entry
+  points, the sample RSVP interaction, and FAQs.
 - Added responsive desktop and mobile layouts with accessible navigation,
   landmarks, focus styles, a skip link, and reduced-motion support.
 - Added a clearly labeled illustrative wedding workspace and guest invitation so
   sample content is not mistaken for real user data.
 - Added locally hosted Playfair Display and Plus Jakarta Sans fonts with their
   license files, plus local sample gallery imagery.
-- Gave current calls to action meaningful preview behavior while authentication
-  remains deferred to the Accounts milestone.
+- Kept the sample RSVP interaction clearly separated from stored application
+  data and connected account calls to action when authentication was added.
 - Validated the implementation with lint, type checking, and a production build.
+
+### Accounts
+
+- Added responsive account creation, login, forgotten-password, and new-password
+  pages, then connected every homepage account call to action to the live flow.
+- Added versioned JSON routes for signup, login, logout, current-account lookup,
+  reset-link requests, and password reset.
+- Added normalized unique email identities, Argon2id password hashes, opaque
+  server-managed sessions, secure HTTP-only cookies, session rotation and
+  revocation, idle and absolute expiry, and a protected post-login welcome page.
+- Added same-origin mutation checks, strict Zod request validation, action-scoped
+  rate limits, generic reset-request responses, hashed single-use reset tokens,
+  and session invalidation after a password reset.
+- Added MongoDB/Mongoose models and a controlled `npm run db:sync-indexes`
+  command for unique and TTL indexes. Added Resend password-reset delivery with
+  escaped account data and one-hour reset links.
+- Documented the required local environment variables in `.env.example` and
+  added focused tests for password hashing, tokens, validation, email
+  normalization, origin checks, and rate-limit key derivation.
+- Validated the implementation with ESLint, TypeScript, ten passing unit
+  tests, a production build, route rendering checks, and a clean npm dependency
+  audit.
+- Verified the live MongoDB-backed browser flow in Google Chrome: account
+  creation, initial authenticated access, logout and protected-route redirect,
+  invalid-password handling, fresh login, a second logout, duplicate-account
+  rejection, persisted session revocation, reset-email delivery through Resend,
+  and password reset with the one-time emailed link.
+- Added authenticated-user redirects for login and signup, plus cross-tab logout
+  synchronization for open workspace pages. Verified in Google Chrome that an
+  authenticated `/login` request returns to `/welcome` and that logging out in
+  one of two open welcome tabs moves both tabs to `/login` without a manual
+  refresh.
 
 ## Current focus
 
-The next planned milestone is **Accounts**: signup, login, logout, password reset,
-secure sessions, validation, and the essential password-reset email flow. Start
-it only when explicitly requested.
+The next planned feature milestone is **Wedding workspace**: wedding setup,
+settings, member invitations, roles, and permissions. Start that milestone only
+when explicitly requested.
 
 ## Update policy
 
