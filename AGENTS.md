@@ -4,6 +4,8 @@
 
 - Read the relevant requirements in `docs/PRD.md`, `docs/SYSTEM_DESIGN.md`,
   `docs/DATABASE_DESIGN.md`, and `docs/API_DESIGN.md` before implementing features.
+- Read `docs/PROJECT_STATUS.md` before starting feature work so the implementation
+  begins from the latest recorded project state.
 - Preserve the existing documents and filenames unless the user requests edits.
 - Milestone 1 is the application scaffold. Implement later milestones only when
   requested; reserved directories with `.gitkeep` do not authorize feature work.
@@ -41,6 +43,16 @@ Essential emails, such as password resets and member invitations, arrive with
 their feature. Introduce shared file/storage capabilities when private
 attachments first require them, then reuse them for the gallery. Keep the four
 design documents as the detailed requirements for each feature.
+
+## Project status tracking
+
+- Maintain `docs/PROJECT_STATUS.md` as the living record of project progress.
+- Update it in the same change whenever a major feature or milestone is completed
+  or its implementation status materially changes.
+- Record the completion date, delivered behavior, relevant validation, current
+  milestone status, and the next agreed focus.
+- Record only work that has actually been implemented and verified. Do not mark
+  roadmap items complete in anticipation of future development.
 
 ## Architecture
 
