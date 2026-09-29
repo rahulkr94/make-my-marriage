@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
 **Last updated:** 29 September 2026  
-**Current phase:** Accounts complete; Wedding workspace is next
+**Current phase:** Wedding workspace in progress; wedding setup complete
 **Overall status:** Active development
 
 ## Purpose
@@ -19,7 +19,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Application scaffold | Complete | Next.js App Router, TypeScript, Tailwind CSS, ESLint, repository structure, environment examples, and Webpack-based development/build scripts are in place. |
 | Public homepage | Complete | Responsive marketing page at `/` with navigation, hero, labeled sample wedding workspace, feature overview, four-step workflow, guest experience, family roles, gallery preview, FAQ, and closing call to action. |
 | Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
-| Wedding workspace | Not started | Wedding setup, settings, member invitations, roles, and permissions. |
+| Wedding workspace | In progress | Wedding setup is complete: an authenticated account can create one wedding with an atomic first ADMIN membership. Settings, member invitations, roles, and permissions remain. |
 | Events | Not started | Event creation and editing, venues, dates, directions, and live-stream links. |
 | Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
 | RSVP and dashboard | Not started | Per-event responses, attendee counts, and the initial signed-in dashboard. |
@@ -87,11 +87,33 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   one of two open welcome tabs moves both tabs to `/login` without a manual
   refresh.
 
+### Wedding workspace — Wedding setup
+
+- Added a responsive `/setup/wedding` flow for bride and groom names, wedding
+  date, IANA time zone, main venue, address, and an optional description.
+- Added strict setup validation, wedding and membership models, and an atomic
+  transaction that creates the wedding and its creator's first `ADMIN`
+  membership together.
+- Enforced one active wedding per account with the specified partial unique
+  membership index and returned a clear conflict for repeat creation attempts.
+- Added authenticated wedding creation and member-scoped wedding read APIs, and
+  expanded the current-account response with wedding and membership summaries.
+- Redirected signed-in accounts without a wedding into setup and accounts with a
+  wedding into a workspace welcome view showing the saved date, venue, role,
+  address, and description.
+- Expanded the controlled index command to include wedding collections and made
+  it load the same local environment configuration as Next.js. Synchronized the
+  indexes against the configured development database.
+- Added five focused wedding validation and index tests. Verified the live Atlas
+  transaction, first-admin membership, workspace lookup, duplicate-wedding
+  rejection, and test-data cleanup with an isolated integration smoke run.
+
 ## Current focus
 
-The next planned feature milestone is **Wedding workspace**: wedding setup,
-settings, member invitations, roles, and permissions. Start that milestone only
-when explicitly requested.
+Review the completed wedding setup flow. The next planned increment within
+**Wedding workspace** is wedding settings, followed separately by member
+invitations, roles, and permissions. Start the next increment only when
+explicitly requested.
 
 ## Update policy
 

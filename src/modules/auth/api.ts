@@ -12,6 +12,10 @@ export function accepted(message: string) {
   return Response.json({ data: { message } }, { status: 202, headers: noStoreHeaders });
 }
 
+export function created(data: unknown, location: string) {
+  return Response.json({ data }, { status: 201, headers: { ...noStoreHeaders, Location: location } });
+}
+
 export async function readJson(request: Request) {
   try {
     return await request.json();
