@@ -1,7 +1,7 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import { AuthError } from "@/modules/auth/request-security";
 import { WeddingMemberModel, WeddingModel } from "./models";
-import type { CreateWeddingInput } from "./schemas";
+import type { CreateWeddingInput, UpdateWeddingInput } from "./schemas";
 
 export async function createWedding(userId: string, input: CreateWeddingInput) {
   const database = await connectToDatabase();
@@ -78,6 +78,21 @@ export async function getWeddingForUser(userId: string, weddingId: string) {
     },
     wedding: sanitizeWedding(wedding),
   };
+}
+
+export async function updateWedding(userId: string, weddingId: string, input: UpdateWeddingInput) {
+  await connectToDatabase();
+  const membership = await WeddingMemberModel.findOne({ userId, weddingId, status: "ACTIVE" }).lean();
+  if (!membership) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
+  if (membership.role !== "ADMIN") throw new AuthError("FORBIDDEN", "Only wedding administrators can update these settings.", 403);
+
+  const wedding = await WeddingModel.findByIdAndUpdate(
+    weddingId,
+    { $set: input },
+    { new: true, runValidators: true },
+  );
+  if (!wedding) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
+  return sanitizeWedding(wedding);
 }
 
 function sanitizeWedding(wedding: {

@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 29 September 2026  
-**Current phase:** Wedding workspace in progress; wedding setup complete
+**Last updated:** 1 October 2026
+**Current phase:** Wedding workspace in progress; wedding setup and settings complete
 **Overall status:** Active development
 
 ## Purpose
@@ -19,7 +19,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Application scaffold | Complete | Next.js App Router, TypeScript, Tailwind CSS, ESLint, repository structure, environment examples, and Webpack-based development/build scripts are in place. |
 | Public homepage | Complete | Responsive marketing page at `/` with navigation, hero, labeled sample wedding workspace, feature overview, four-step workflow, guest experience, family roles, gallery preview, FAQ, and closing call to action. |
 | Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
-| Wedding workspace | In progress | Wedding setup is complete: an authenticated account can create one wedding with an atomic first ADMIN membership. Settings, member invitations, roles, and permissions remain. |
+| Wedding workspace | In progress | Wedding setup and administrator-only wedding settings are complete. Member invitations, roles, and permissions remain. |
 | Events | Not started | Event creation and editing, venues, dates, directions, and live-stream links. |
 | Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
 | RSVP and dashboard | Not started | Per-event responses, attendee counts, and the initial signed-in dashboard. |
@@ -107,12 +107,36 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 - Added five focused wedding validation and index tests. Verified the live Atlas
   transaction, first-admin membership, workspace lookup, duplicate-wedding
   rejection, and test-data cleanup with an isolated integration smoke run.
+- Applied the finalized Stitch desktop and mobile designs to the wedding setup
+  and workspace landing pages while preserving the live setup and session flows.
+
+### Wedding workspace — Wedding settings
+
+- Added the responsive `/settings/wedding` screen from the finalized Stitch
+  desktop and mobile designs, with a live wedding summary, editable foundational
+  details, character count, change summary, mobile save actions, and clear
+  loading, validation, success, and retry states.
+- Added the administrator-only `PATCH /api/v1/weddings/{weddingId}` flow with
+  same-origin protection, strict partial validation, member-scoped lookup, and
+  server-side role enforcement. Managers and regular members cannot change
+  wedding settings.
+- Connected the workspace navigation to settings, added a visible administrator
+  edit action to the celebration overview, and preserved the overview as the
+  cancel and return destination.
+- Made the public homepage session-aware: signed-in accounts see a direct link
+  to their wedding workspace, or to setup when they have not created one,
+  instead of login and account-creation actions. The navigation identifies the
+  signed-in user and labels an existing workspace action “Go to your wedding.”
+- Added wedding-update schema coverage. Verified the UI at desktop and mobile
+  sizes, confirmed dirty-state behavior without modifying live user data, and
+  completed an isolated Atlas smoke test proving that an admin update persists
+  while a manager update is rejected; the smoke records were removed.
 
 ## Current focus
 
-Review the completed wedding setup flow. The next planned increment within
-**Wedding workspace** is wedding settings, followed separately by member
-invitations, roles, and permissions. Start the next increment only when
+Review the completed wedding setup and settings flows. The next planned
+increment within **Wedding workspace** is member invitations, followed
+separately by roles and permissions. Start the next increment only when
 explicitly requested.
 
 ## Update policy

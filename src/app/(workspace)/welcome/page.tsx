@@ -35,9 +35,11 @@ export default async function WelcomePage() {
               <span className="py-7 text-body-sm text-on-surface-variant">Itinerary &amp; rituals</span>
               <span className="py-7 text-body-sm text-on-surface-variant">Guest curation</span>
               <span className="py-7 text-body-sm text-on-surface-variant">Trousseau &amp; treasury</span>
+              <Link href="/settings/wedding" className="py-7 text-body-sm text-on-surface-variant transition-colors hover:text-on-surface">Settings</Link>
             </nav>
           </div>
           <div className="flex items-center gap-2 sm:gap-4">
+            <Link href="/settings/wedding" aria-label="Wedding settings" className="rounded p-2 text-on-surface-variant transition-colors hover:text-primary xl:hidden"><WorkspaceIcon name="settings" className="text-xl" /></Link>
             <span className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-body-sm font-semibold text-on-primary">{accountInitial}</span>
             <span className="hidden text-right md:block"><span className="block text-body-sm font-medium">{user.email}</span><span className="block text-[10px] font-semibold uppercase tracking-[0.12em] text-on-surface-variant">Host &amp; {role}</span></span>
             <span className="hidden h-4 w-px bg-outline-variant/70 sm:block" />
@@ -67,7 +69,10 @@ export default async function WelcomePage() {
           <div className="space-y-5">
             <article className="relative overflow-hidden rounded-xl bg-surface-container-lowest p-5 shadow-[0_4px_20px_rgba(28,26,23,0.05)] sm:p-8">
               <WorkspaceIcon name="sparkle" className="pointer-events-none absolute -bottom-12 -right-12 text-[12rem] text-on-surface/[0.025]" />
-              <p className="text-label-sm font-semibold uppercase tracking-[0.14em] text-tertiary">Celebration overview</p>
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-label-sm font-semibold uppercase tracking-[0.14em] text-tertiary">Celebration overview</p>
+                {membership.role === "ADMIN" && <Link href="/settings/wedding" className="inline-flex items-center gap-2 rounded-lg px-3 py-2 text-label-md font-semibold text-tertiary transition-colors hover:bg-surface-container-low hover:text-primary"><WorkspaceIcon name="settings" className="text-lg" /> Edit wedding details</Link>}
+              </div>
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-2 pb-5 pt-4">
                 <h2 className="font-serif text-headline-lg tracking-tight">{formatWeddingDate(wedding.weddingDate)}</h2>
                 {daysToGo !== null && <span className="inline-flex items-center gap-2 rounded-full bg-surface-container px-3 py-1 text-label-md text-tertiary"><WorkspaceIcon name="clock" /> {daysToGo === 0 ? "Today" : `${daysToGo} days to go`}</span>}

@@ -1,10 +1,17 @@
 import Image from "next/image";
 import { Icon, Brand } from "@/components/marketing/brand";
 import { Navigation, LaunchButton, GuestRsvpDemo, Faq } from "@/components/marketing/home-interactions";
-export default function Home() {
+import { getCurrentUser } from "@/modules/auth/session";
+import { getWorkspaceForUser } from "@/modules/weddings/service";
+
+export default async function Home() {
+    const user = await getCurrentUser();
+    const workspace = user ? await getWorkspaceForUser(user.id) : null;
+    const workspaceHref = user ? (workspace ? "/welcome" : "/setup/wedding") : undefined;
+    const workspaceLabel = workspace ? "Go to your wedding" : user ? "Create your wedding" : undefined;
     return (<>
     <a className="skip-link" href="#main-content">Skip to content</a>
-    <Navigation />
+    <Navigation workspaceHref={workspaceHref} workspaceLabel={workspaceLabel} userName={user?.name} />
     <main id="main-content" className="w-full bg-surface"><div className="flex flex-col w-full">
 
     <section className="relative w-full overflow-hidden pt-12 md:pt-16 pb-16 lg:pb-24">
@@ -28,8 +35,8 @@ export default function Home() {
         </p>
 
     <div className="flex flex-col sm:flex-row items-center gap-space-md w-full sm:w-auto">
-    <LaunchButton className="w-full sm:w-auto inline-flex items-center justify-center bg-primary text-on-primary font-label-md text-label-md px-space-xl py-3.5 rounded-lg hover:bg-primary-container shadow-md transition-all text-center">
-            Create your wedding
+    <LaunchButton href={workspaceHref} className="w-full sm:w-auto inline-flex items-center justify-center bg-primary text-on-primary font-label-md text-label-md px-space-xl py-3.5 rounded-lg hover:bg-primary-container shadow-md transition-all text-center">
+            {workspaceLabel ?? "Create your wedding"}
           </LaunchButton>
     <a className="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-surface-container-low text-on-surface font-label-md text-label-md px-space-lg py-3.5 rounded-lg hover:bg-surface-container shadow-sm transition-all text-center" href="#how-it-works">
     <span className="">See how it works</span>
@@ -682,8 +689,8 @@ export default function Home() {
     <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl mb-space-xl">
           A thoughtful home for your plans, your people, and all the little things that make this celebration yours.
         </p>
-    <LaunchButton className="inline-flex items-center justify-center bg-primary text-on-primary font-label-md text-label-md px-space-xl py-4 rounded-lg hover:bg-primary-container shadow-lg transition-all">
-          Create your wedding
+    <LaunchButton href={workspaceHref} className="inline-flex items-center justify-center bg-primary text-on-primary font-label-md text-label-md px-space-xl py-4 rounded-lg hover:bg-primary-container shadow-lg transition-all">
+          {workspaceLabel ?? "Create your wedding"}
         </LaunchButton>
     <div className="flex flex-wrap items-center justify-center gap-space-md mt-space-md text-on-surface-variant font-label-sm text-label-sm">
     <span className="">Your wedding, thoughtfully organized</span>

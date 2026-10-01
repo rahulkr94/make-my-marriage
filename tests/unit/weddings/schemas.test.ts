@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createWeddingSchema } from "@/modules/weddings/schemas";
+import { createWeddingSchema, updateWeddingSchema } from "@/modules/weddings/schemas";
 import { isValidTimeZone } from "@/modules/weddings/time-zones";
 
 const validWedding = {
@@ -27,5 +27,11 @@ describe("wedding setup schema", () => {
   it("recognizes IANA time zones", () => {
     expect(isValidTimeZone("Asia/Kolkata")).toBe(true);
     expect(isValidTimeZone("not-a-time-zone")).toBe(false);
+  });
+
+  it("accepts a strict partial settings update", () => {
+    expect(updateWeddingSchema.parse({ brideName: "  Priyanka  " })).toEqual({ brideName: "Priyanka" });
+    expect(updateWeddingSchema.safeParse({}).success).toBe(false);
+    expect(updateWeddingSchema.safeParse({ role: "ADMIN" }).success).toBe(false);
   });
 });
