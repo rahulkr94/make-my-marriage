@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
 **Last updated:** 1 October 2026
-**Current phase:** Wedding workspace in progress; wedding setup and settings complete
+**Current phase:** Wedding workspace in progress; setup, settings, and member invitations complete
 **Overall status:** Active development
 
 ## Purpose
@@ -19,7 +19,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Application scaffold | Complete | Next.js App Router, TypeScript, Tailwind CSS, ESLint, repository structure, environment examples, and Webpack-based development/build scripts are in place. |
 | Public homepage | Complete | Responsive marketing page at `/` with navigation, hero, labeled sample wedding workspace, feature overview, four-step workflow, guest experience, family roles, gallery preview, FAQ, and closing call to action. |
 | Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
-| Wedding workspace | In progress | Wedding setup and administrator-only wedding settings are complete. Member invitations, roles, and permissions remain. |
+| Wedding workspace | In progress | Wedding setup, administrator-only settings, and secure member invitations are complete. Member role changes, removal, and permission management remain. |
 | Events | Not started | Event creation and editing, venues, dates, directions, and live-stream links. |
 | Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
 | RSVP and dashboard | Not started | Per-event responses, attendee counts, and the initial signed-in dashboard. |
@@ -132,12 +132,38 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   completed an isolated Atlas smoke test proving that an admin update persists
   while a manager update is rejected; the smoke records were removed.
 
+### Wedding workspace — Member invitations
+
+- Added the responsive `/members` workspace from the finalized Stitch desktop
+  and mobile designs, using real active-member and pending-invitation data,
+  administrator summaries, role guidance, accessible invite and revoke dialogs,
+  immediate list updates after invitation actions, delivery feedback, and an
+  empty state.
+- Added administrator-only member listing, invitation creation, resend, and
+  revoke APIs. Invitations use hashed, single-use tokens with seven-day expiry;
+  resending rotates and invalidates the previous link, while email failure keeps
+  the invitation available and returns the newly issued link once for copying.
+- Added the `/join/{token}` acceptance journey for existing and new accounts,
+  preserving the invitation through login or signup, requiring the invited
+  email, enforcing the one-active-wedding rule, and atomically consuming the
+  invitation while creating or reactivating membership.
+- Added the `member_invites` model and controlled indexes, reused Resend for
+  invitation delivery, and connected the overview and workspace navigation to
+  member management.
+- Added focused validation, redirect-safety, and index tests. Verified lint,
+  TypeScript, 21 unit tests, the production build, controlled Atlas index sync,
+  the authenticated desktop UI and invitation dialog, and an isolated Atlas
+  smoke test for create, preview, acceptance, single-use enforcement, revoke,
+  and administrator-only access; temporary records were removed. Corrected the
+  local Resend sandbox sender and confirmed a real member invitation reached
+  Resend's `Delivered` state for the account-owner test recipient.
+
 ## Current focus
 
-Review the completed wedding setup and settings flows. The next planned
-increment within **Wedding workspace** is member invitations, followed
-separately by roles and permissions. Start the next increment only when
-explicitly requested.
+Review the completed member invitation flow. The next planned increment within
+**Wedding workspace** is member role and access management: change roles,
+promote a second administrator, remove access, and protect the final active
+administrator. Start it only when explicitly requested.
 
 ## Update policy
 

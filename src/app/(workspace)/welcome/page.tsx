@@ -35,6 +35,7 @@ export default async function WelcomePage() {
               <span className="py-7 text-body-sm text-on-surface-variant">Itinerary &amp; rituals</span>
               <span className="py-7 text-body-sm text-on-surface-variant">Guest curation</span>
               <span className="py-7 text-body-sm text-on-surface-variant">Trousseau &amp; treasury</span>
+              {membership.role === "ADMIN" && <Link href="/members" className="py-7 text-body-sm text-on-surface-variant transition-colors hover:text-on-surface">Members</Link>}
               <Link href="/settings/wedding" className="py-7 text-body-sm text-on-surface-variant transition-colors hover:text-on-surface">Settings</Link>
             </nav>
           </div>
@@ -119,14 +120,14 @@ export default async function WelcomePage() {
               <RoadmapCard state="complete" title="Wedding details" badge="Complete">
                 Your foundational celebration information and primary date are saved.
               </RoadmapCard>
+              <RoadmapCard state="complete" title="Invite your people" badge="Complete">
+                Bring your partner and family coordinators into the workspace with clear invitation roles.
+                {membership.role === "ADMIN" && <Link href="/members" className="mt-3 inline-flex items-center gap-1 text-label-md font-semibold text-primary hover:underline">Manage wedding members <span aria-hidden="true">→</span></Link>}
+              </RoadmapCard>
               <RoadmapCard state="next" title="Events & multi-day itinerary" badge="Next step">
                 Add rituals, dates, timings, venues, directions, and dress notes for every gathering.
                 <div className="mt-3 flex flex-wrap gap-1.5">{["Haldi", "Mehendi", "Sangeet", "Pheras", "Reception"].map((event) => <span key={event} className="rounded bg-surface-container px-2 py-1 text-[10px] font-semibold text-tertiary">{event}</span>)}</div>
                 <p className="mt-4 rounded-lg bg-primary/8 px-4 py-3 text-center text-label-md font-semibold text-primary">Events will be the next feature</p>
-              </RoadmapCard>
-              <RoadmapCard state="later" title="Invite your people" badge="Step 3">
-                Bring your partner and family coordinators into the workspace with clear roles and permissions.
-                <p className="mt-3 flex items-center gap-2 text-label-sm text-outline"><WorkspaceIcon name="lock" /> Available after member invitations are built</p>
               </RoadmapCard>
             </ol>
           </aside>

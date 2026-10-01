@@ -14,7 +14,7 @@ const content = {
   reset: { endpoint: "/api/v1/auth/password-resets", submit: "Set new password", pending: "Updating your password…" },
 } as const;
 
-export function AuthForm({ variant, token }: { variant: Variant; token?: string }) {
+export function AuthForm({ variant, token, nextPath = "/welcome", initialEmail = "" }: { variant: Variant; token?: string; nextPath?: string; initialEmail?: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");
@@ -57,7 +57,7 @@ export function AuthForm({ variant, token }: { variant: Variant; token?: string 
       } else if (variant === "reset") {
         router.push("/login?reset=success");
       } else {
-        router.push("/welcome");
+        router.push(nextPath);
         router.refresh();
       }
     } catch {
@@ -74,7 +74,7 @@ export function AuthForm({ variant, token }: { variant: Variant; token?: string 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-5">
       {showName && <Field label="Your name" name="name" autoComplete="name" placeholder="Aarav Sharma" error={fieldErrors.name?.[0]} />}
-      {showEmail && <Field label="Email address" name="email" type="email" autoComplete="email" placeholder="you@example.com" error={fieldErrors.email?.[0]} />}
+      {showEmail && <Field label="Email address" name="email" type="email" autoComplete="email" placeholder="you@example.com" defaultValue={initialEmail} error={fieldErrors.email?.[0]} />}
       {showPassword && (
         <>
           <Field
@@ -105,12 +105,13 @@ export function AuthForm({ variant, token }: { variant: Variant; token?: string 
   );
 }
 
-function Field({ label, name, type = "text", autoComplete, placeholder, hint, error }: {
+function Field({ label, name, type = "text", autoComplete, placeholder, defaultValue, hint, error }: {
   label: string;
   name: string;
   type?: string;
   autoComplete: string;
   placeholder?: string;
+  defaultValue?: string;
   hint?: string;
   error?: string;
 }) {
@@ -124,6 +125,7 @@ function Field({ label, name, type = "text", autoComplete, placeholder, hint, er
         type={type}
         autoComplete={autoComplete}
         placeholder={placeholder}
+        defaultValue={defaultValue}
         required
         aria-invalid={Boolean(error)}
         aria-describedby={describedBy}
