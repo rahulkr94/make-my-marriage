@@ -7,7 +7,7 @@ import { getWorkspaceForUser } from "@/modules/weddings/service";
 export default async function Home() {
     const user = await getCurrentUser();
     const workspace = user ? await getWorkspaceForUser(user.id) : null;
-    const workspaceHref = user ? (workspace ? "/welcome" : "/setup/wedding") : undefined;
+    const workspaceHref = user ? (workspace ? "/dashboard" : "/setup/wedding") : undefined;
     const workspaceLabel = workspace ? "Go to your wedding" : user ? "Create your wedding" : undefined;
     return (<>
     <a className="skip-link" href="#main-content">Skip to content</a>

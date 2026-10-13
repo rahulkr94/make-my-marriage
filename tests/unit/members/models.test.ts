@@ -6,4 +6,9 @@ describe("member invitation indexes", () => {
     const index = MemberInviteModel.schema.indexes().find(([keys]) => keys.weddingId === 1 && keys.emailNormalized === 1);
     expect(index?.[1]).toMatchObject({ unique: true, partialFilterExpression: { status: "PENDING" } });
   });
+
+  it("persists administrator invitations alongside manager and member roles", () => {
+    const role = MemberInviteModel.schema.path("role");
+    expect("enumValues" in role ? role.enumValues : []).toEqual(["ADMIN", "MANAGER", "MEMBER"]);
+  });
 });

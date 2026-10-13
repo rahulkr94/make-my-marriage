@@ -15,7 +15,7 @@ export default async function WeddingSettingsPage() {
   if (!user) redirect("/login");
   const workspace = await getWorkspaceForUser(user.id);
   if (!workspace) redirect("/setup/wedding");
-  if (workspace.membership.role !== "ADMIN") redirect("/welcome");
+  if (workspace.membership.role !== "ADMIN") redirect("/dashboard");
 
   const { wedding } = workspace;
   const accountInitial = (user.name || user.email).trim().charAt(0).toUpperCase();
@@ -27,7 +27,7 @@ export default async function WeddingSettingsPage() {
           <div className="flex items-center gap-8">
             <Brand />
             <nav aria-label="Workspace sections" className="hidden items-center gap-5 xl:flex">
-              <Link href="/welcome" className="py-7 text-body-sm text-on-surface-variant transition-colors hover:text-on-surface">Overview</Link>
+              <Link href="/dashboard" className="py-7 text-body-sm text-on-surface-variant transition-colors hover:text-on-surface">Overview</Link>
               <span className="py-7 text-body-sm text-on-surface-variant">Itinerary &amp; rituals</span>
               <span className="py-7 text-body-sm text-on-surface-variant">Guest curation</span>
               <span className="py-7 text-body-sm text-on-surface-variant">Trousseau &amp; treasury</span>
@@ -44,7 +44,7 @@ export default async function WeddingSettingsPage() {
       </header>
 
       <section className="mx-auto max-w-[1240px] px-5 pb-16 pt-8 sm:px-8 sm:pt-12">
-        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-label-sm font-semibold uppercase tracking-[0.1em] text-on-surface-variant"><Link href="/welcome" className="hover:text-primary">Wedding workspace</Link><span className="text-outline-variant">/</span><span>Settings</span><span className="text-outline-variant">/</span><span className="text-primary">Wedding details</span></nav>
+        <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-2 text-label-sm font-semibold uppercase tracking-[0.1em] text-on-surface-variant"><Link href="/dashboard" className="hover:text-primary">Wedding workspace</Link><span className="text-outline-variant">/</span><span>Settings</span><span className="text-outline-variant">/</span><span className="text-primary">Wedding details</span></nav>
 
         <div className="mt-4 flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div className="max-w-2xl"><p className="flex items-center gap-2 text-label-sm font-semibold uppercase tracking-[0.14em] text-tertiary"><span className="h-1.5 w-1.5 rounded-full bg-primary" /> Wedding settings · Foundational details</p><h1 className="mt-2 font-serif text-headline-lg-mobile tracking-tight sm:text-headline-lg">Refine your wedding details.</h1><p className="mt-3 text-body-lg leading-8 text-on-surface-variant">Keep the date, destination, and story at the heart of your workspace up to date as plans evolve.</p></div>
@@ -57,7 +57,7 @@ export default async function WeddingSettingsPage() {
       </section>
 
       <footer className="border-t border-outline-variant/25 bg-surface-container-low px-5 py-8 sm:px-8">
-        <div className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-4 text-center text-body-sm text-on-surface-variant sm:flex-row sm:text-left"><div><p className="font-serif text-headline-sm text-tertiary">Make My Marriage</p><p className="mt-1 text-label-sm uppercase tracking-[0.12em]">A quiet place to plan together</p></div><Link href="/welcome" className="font-semibold hover:text-primary">Return to workspace</Link></div>
+        <div className="mx-auto flex max-w-[1240px] flex-col items-center justify-between gap-4 text-center text-body-sm text-on-surface-variant sm:flex-row sm:text-left"><div><p className="font-serif text-headline-sm text-tertiary">Make My Marriage</p><p className="mt-1 text-label-sm uppercase tracking-[0.12em]">A quiet place to plan together</p></div><Link href="/dashboard" className="font-semibold hover:text-primary">Return to dashboard</Link></div>
       </footer>
     </main>
   );

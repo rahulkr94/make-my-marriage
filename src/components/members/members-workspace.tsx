@@ -8,11 +8,12 @@ import { Brand } from "@/components/marketing/brand";
 import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
 
 type Role = "ADMIN" | "MANAGER" | "MEMBER";
+type InvitationRole = "ADMIN" | "MANAGER" | "MEMBER";
 type Member = { id: string; userId: string; name: string; email: string; role: Role; joinedAt: string };
 type Invitation = {
   id: string;
   email: string;
-  role: "MANAGER" | "MEMBER";
+  role: InvitationRole;
   status: string;
   deliveryStatus: "PENDING" | "SENT" | "FAILED";
   expiresAt: string;
@@ -28,6 +29,8 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
   const router = useRouter();
   const [visibleInvitations, setVisibleInvitations] = useState(invitations);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [adminInviteTarget, setAdminInviteTarget] = useState<{ email: string; role: "ADMIN" } | null>(null);
+  const [inviteDraft, setInviteDraft] = useState<{ email: string; role: InvitationRole } | null>(null);
   const [revokeTarget, setRevokeTarget] = useState<Invitation | null>(null);
   const [pendingAction, setPendingAction] = useState<string | null>(null);
   const [error, setError] = useState("");
@@ -37,11 +40,12 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
   const admins = members.filter((member) => member.role === "ADMIN").length;
 
   useEffect(() => {
-    if (!inviteOpen && !revokeTarget) return;
+    if (!inviteOpen && !revokeTarget && !adminInviteTarget) return;
     function close(event: KeyboardEvent) {
       if (event.key === "Escape") {
         setInviteOpen(false);
         setRevokeTarget(null);
+        setAdminInviteTarget(null);
       }
     }
     document.addEventListener("keydown", close);
@@ -50,7 +54,7 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
       document.removeEventListener("keydown", close);
       document.body.style.overflow = "";
     };
-  }, [inviteOpen, revokeTarget]);
+  }, [inviteOpen, revokeTarget, adminInviteTarget]);
 
   useEffect(() => {
     if (!toast) return;
@@ -60,33 +64,61 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
 
   async function sendInvitation(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    const formElement = event.currentTarget;
+    const form = new FormData(formElement);
+    const email = String(form.get("email") ?? "");
+    const role = String(form.get("role") ?? "") as InvitationRole;
+    if (role === "ADMIN") {
+      setInviteDraft({ email, role });
+      setAdminInviteTarget({ email, role });
+      setInviteOpen(false);
+      return;
+    }
+    if (await createInvitation({ email, role })) formElement.reset();
+  }
+
+  async function createInvitation(input: { email: string; role: InvitationRole }) {
     setPendingAction("create");
     setError("");
     setFieldErrors({});
-    const form = new FormData(event.currentTarget);
     try {
       const response = await fetch(`/api/v1/weddings/${wedding.id}/member-invitations`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.get("email"), role: form.get("role") }),
+        body: JSON.stringify(input),
       });
       const payload = await response.json() as ApiError & InvitationResponse;
       if (!response.ok || !payload.data) {
         setError(payload.error?.message ?? "We couldn’t create this invitation.");
         setFieldErrors(groupErrors(payload.error?.details));
-        return;
+        return false;
       }
       setVisibleInvitations((current) => [payload.data!.invitation, ...current.filter((invitation) => invitation.id !== payload.data!.invitation.id)]);
       if (payload.data.invitationUrl) setFreshLinks((current) => ({ ...current, [payload.data!.invitation.id]: payload.data!.invitationUrl! }));
       setInviteOpen(false);
+      setInviteDraft(null);
       setToast(payload.data.invitation.deliveryStatus === "SENT" ? "Invitation sent." : "Invitation created, but Resend rejected delivery. Verify a sender domain, then resend.");
-      event.currentTarget.reset();
       router.refresh();
+      return true;
     } catch {
       setError("We couldn’t reach the server. Please try again.");
+      return false;
     } finally {
       setPendingAction(null);
     }
+  }
+
+  async function confirmAdministratorInvitation() {
+    if (!adminInviteTarget) return;
+    const sent = await createInvitation(adminInviteTarget);
+    if (sent) setAdminInviteTarget(null);
+  }
+
+  function openInvitationDialog() {
+    setError("");
+    setFieldErrors({});
+    setInviteDraft(null);
+    setInviteOpen(true);
   }
 
   async function resend(invitation: Invitation) {
@@ -158,7 +190,7 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
               <h1 className="mt-2 font-serif text-headline-lg tracking-tight">Members</h1>
               <p className="mt-2 text-body-lg leading-7 text-on-surface-variant">Invite family and trusted collaborators to curate your celebration with role-based permissions and peace of mind.</p>
             </div>
-            <button type="button" onClick={() => { setError(""); setFieldErrors({}); setInviteOpen(true); }} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-body-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-container">
+            <button type="button" onClick={openInvitationDialog} className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-body-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-container">
               <WorkspaceIcon name="userPlus" className="text-xl" /> Invite member
             </button>
           </section>
@@ -184,7 +216,7 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
                   <InvitationRow key={invitation.id} invitation={invitation} freshLink={freshLinks[invitation.id]} busy={pendingAction?.endsWith(invitation.id) ?? false} onResend={() => resend(invitation)} onCopy={() => copyLink(invitation)} onRevoke={() => setRevokeTarget(invitation)} />
                 ))}
               </div>
-            ) : <EmptyInvitations onInvite={() => setInviteOpen(true)} />}
+            ) : <EmptyInvitations onInvite={openInvitationDialog} />}
           </section>
 
           <section className="mt-8 rounded-xl bg-surface-container p-5 sm:p-6">
@@ -194,12 +226,13 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
 
           <footer className="mt-9 flex flex-col gap-3 border-t border-outline-variant/30 pt-6 text-label-sm text-on-surface-variant sm:flex-row sm:items-center sm:justify-between">
             <p className="flex items-center gap-2"><WorkspaceIcon name="lock" className="text-secondary" /> Member data stays inside this wedding workspace.</p>
-            <Link href="/welcome" className="font-semibold text-primary hover:underline">Return to overview</Link>
+            <Link href="/dashboard" className="font-semibold text-primary hover:underline">Return to dashboard</Link>
           </footer>
         </main>
       </div>
 
-      {inviteOpen && <InviteDialog pending={pendingAction === "create"} error={error} fieldErrors={fieldErrors} onClose={() => setInviteOpen(false)} onSubmit={sendInvitation} />}
+      {inviteOpen && <InviteDialog initialEmail={inviteDraft?.email} initialRole={inviteDraft?.role} pending={pendingAction === "create"} error={error} fieldErrors={fieldErrors} onClose={() => { setInviteOpen(false); setInviteDraft(null); }} onSubmit={sendInvitation} />}
+      {adminInviteTarget && <ConfirmAdministratorInvite email={adminInviteTarget.email} pending={pendingAction === "create"} error={error} onCancel={() => { setError(""); setAdminInviteTarget(null); setInviteOpen(true); }} onConfirm={confirmAdministratorInvitation} />}
       {revokeTarget && <ConfirmRevoke invitation={revokeTarget} pending={pendingAction === `revoke:${revokeTarget.id}`} onCancel={() => setRevokeTarget(null)} onConfirm={revoke} />}
       {toast && <div role="status" className="fixed bottom-5 left-1/2 z-[70] w-[min(92vw,34rem)] -translate-x-1/2 rounded-xl bg-inverse-surface px-5 py-3 text-center text-body-sm font-medium text-inverse-on-surface shadow-xl">{toast}</div>}
     </div>
@@ -208,13 +241,13 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
 
 function WorkspaceSidebar({ user, wedding }: { user: User; wedding: Wedding }) {
   return <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col justify-between bg-surface-container-low px-5 py-6 shadow-sm xl:flex">
-    <div><Brand /><div className="mt-7 rounded-xl bg-surface p-4 shadow-sm"><p className="font-serif text-headline-sm">{wedding.brideName} &amp; {wedding.groomName}</p><p className="mt-1 text-label-sm font-semibold uppercase tracking-[0.1em] text-on-surface-variant">{formatDate(wedding.weddingDate)}</p></div><nav aria-label="Workspace sections" className="mt-6 space-y-1"><NavItem href="/welcome" icon="dashboard">Overview</NavItem><NavItem icon="calendar">Events</NavItem><NavItem icon="users">Guests</NavItem><NavItem href="/members" icon="badge" active>Members</NavItem><NavItem icon="check">Tasks</NavItem><NavItem icon="payments">Expenses</NavItem><NavItem icon="gallery">Gallery</NavItem><NavItem href="/settings/wedding" icon="settings">Settings</NavItem></nav></div>
+    <div><Brand /><div className="mt-7 rounded-xl bg-surface p-4 shadow-sm"><p className="font-serif text-headline-sm">{wedding.brideName} &amp; {wedding.groomName}</p><p className="mt-1 text-label-sm font-semibold uppercase tracking-[0.1em] text-on-surface-variant">{formatDate(wedding.weddingDate)}</p></div><nav aria-label="Workspace sections" className="mt-6 space-y-1"><NavItem href="/dashboard" icon="dashboard">Overview</NavItem><NavItem icon="calendar">Events</NavItem><NavItem icon="users">Guests</NavItem><NavItem href="/members" icon="badge" active>Members</NavItem><NavItem icon="check">Tasks</NavItem><NavItem icon="payments">Expenses</NavItem><NavItem icon="gallery">Gallery</NavItem><NavItem href="/settings/wedding" icon="settings">Settings</NavItem></nav></div>
     <div className="rounded-xl bg-surface p-4 shadow-sm"><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-label-md font-semibold text-on-primary">{initials(user.name)}</span><div className="min-w-0"><p className="truncate text-body-sm font-semibold">{user.name}</p><p className="mt-0.5 text-label-sm text-primary">Administrator</p></div></div><div className="mt-3 border-t border-outline-variant/25 pt-3"><LogoutButton compact /></div></div>
   </aside>;
 }
 
 function MobileHeader({ user, wedding }: { user: User; wedding: Wedding }) {
-  return <header className="sticky top-0 z-30 border-b border-outline-variant/25 bg-surface/95 px-5 py-3 backdrop-blur xl:hidden"><div className="flex items-center justify-between gap-3"><Link href="/welcome" aria-label="Return to overview" className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container"><WorkspaceIcon name="arrowLeft" className="text-xl" /></Link><Brand /><span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-label-sm font-semibold text-on-primary">{initials(user.name)}</span></div><div className="mt-2 flex items-center justify-center gap-2 text-label-sm text-on-surface-variant"><span>{wedding.brideName} &amp; {wedding.groomName}</span><span>•</span><span>Wedding team</span></div></header>;
+  return <header className="sticky top-0 z-30 border-b border-outline-variant/25 bg-surface/95 px-5 py-3 backdrop-blur xl:hidden"><div className="flex items-center justify-between gap-3"><Link href="/dashboard" aria-label="Return to dashboard" className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container"><WorkspaceIcon name="arrowLeft" className="text-xl" /></Link><Brand /><span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-label-sm font-semibold text-on-primary">{initials(user.name)}</span></div><div className="mt-2 flex items-center justify-center gap-2 text-label-sm text-on-surface-variant"><span>{wedding.brideName} &amp; {wedding.groomName}</span><span>•</span><span>Wedding team</span></div></header>;
 }
 
 function NavItem({ children, icon, href, active = false }: { children: string; icon: Parameters<typeof WorkspaceIcon>[0]["name"]; href?: string; active?: boolean }) {
@@ -250,12 +283,17 @@ function EmptyInvitations({ onInvite }: { onInvite: () => void }) {
   return <div className="mt-4 flex flex-col items-center rounded-xl bg-surface-container-lowest px-5 py-10 text-center shadow-sm"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-container text-primary"><WorkspaceIcon name="mail" className="text-2xl" /></span><h3 className="mt-4 font-serif text-headline-sm">No pending invitations</h3><p className="mt-2 max-w-md text-body-sm leading-6 text-on-surface-variant">Everyone you invited has joined, or you haven’t sent any invitations yet.</p><button type="button" onClick={onInvite} className="mt-5 inline-flex items-center gap-2 rounded-lg bg-surface-container px-5 py-3 text-body-sm font-semibold text-primary hover:bg-surface-container-high"><WorkspaceIcon name="userPlus" className="text-lg" /> Invite someone</button></div>;
 }
 
-function InviteDialog({ pending, error, fieldErrors, onClose, onSubmit }: { pending: boolean; error: string; fieldErrors: Record<string, string[]>; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
-  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-inverse-surface/40 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section role="dialog" aria-modal="true" aria-labelledby="invite-title" className="max-h-[92svh] w-full overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-2xl sm:max-w-lg sm:rounded-xl sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-label-sm font-semibold uppercase tracking-[0.15em] text-primary">Wedding collaboration</p><h2 id="invite-title" className="mt-1 font-serif text-headline-md">Invite someone to your wedding</h2><p className="mt-2 text-body-sm leading-6 text-on-surface-variant">They’ll receive a secure invitation link by email to join your celebration workspace.</p></div><button type="button" aria-label="Close invitation form" onClick={onClose} className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container"><WorkspaceIcon name="close" className="text-xl" /></button></div><form onSubmit={onSubmit} noValidate className="mt-6 space-y-5"><label className="block text-body-sm font-semibold" htmlFor="invite-email">Email address<input autoFocus id="invite-email" name="email" type="email" autoComplete="email" placeholder="name@example.com" required aria-invalid={Boolean(fieldErrors.email)} className="mt-2 w-full rounded-lg border border-transparent bg-surface-container-low px-4 py-3.5 font-normal outline-none focus:border-primary focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" />{fieldErrors.email?.[0] && <span className="mt-2 block text-label-sm font-normal text-error">{fieldErrors.email[0]}</span>}</label><fieldset><legend className="text-body-sm font-semibold">Select workspace role</legend><div className="mt-3 space-y-3"><RoleOption value="MANAGER" title="Manager" badge="Recommended">Can manage events, guests, invitations, tasks, vendors, and expenses.</RoleOption><RoleOption value="MEMBER" title="Member">Can view wedding information and update tasks assigned to them.</RoleOption></div>{fieldErrors.role?.[0] && <span className="mt-2 block text-label-sm text-error">{fieldErrors.role[0]}</span>}</fieldset><div className="flex items-start gap-2.5 rounded-lg bg-surface-container p-3 text-body-sm leading-5 text-on-surface-variant"><WorkspaceIcon name="lock" className="mt-0.5 text-lg text-tertiary" />Invitation links are single use and expire automatically after seven days.</div>{error && <p role="alert" className="rounded-lg bg-error-container p-3 text-body-sm text-on-error-container">{error}</p>}<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end"><button type="button" onClick={onClose} disabled={pending} className="rounded-lg bg-surface-container px-5 py-3 text-body-sm font-semibold hover:bg-surface-container-high disabled:opacity-50">Cancel</button><button type="submit" disabled={pending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-body-sm font-semibold text-on-primary hover:bg-primary-container disabled:opacity-55"><WorkspaceIcon name="mail" className="text-lg" />{pending ? "Sending invitation…" : "Send invitation"}</button></div></form></section></div>;
+function InviteDialog({ initialEmail = "", initialRole = "MANAGER", pending, error, fieldErrors, onClose, onSubmit }: { initialEmail?: string; initialRole?: InvitationRole; pending: boolean; error: string; fieldErrors: Record<string, string[]>; onClose: () => void; onSubmit: (event: FormEvent<HTMLFormElement>) => void }) {
+  const [role, setRole] = useState<InvitationRole>(initialRole);
+  return <div className="fixed inset-0 z-50 flex items-end justify-center bg-inverse-surface/40 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section role="dialog" aria-modal="true" aria-labelledby="invite-title" className="max-h-[92svh] w-full overflow-y-auto rounded-t-2xl bg-surface p-5 shadow-2xl sm:max-w-lg sm:rounded-xl sm:p-8"><div className="flex items-start justify-between gap-4"><div><p className="text-label-sm font-semibold uppercase tracking-[0.15em] text-primary">Wedding collaboration</p><h2 id="invite-title" className="mt-1 font-serif text-headline-md">Invite someone to your wedding</h2><p className="mt-2 text-body-sm leading-6 text-on-surface-variant">They’ll receive a secure invitation link by email to join your celebration workspace.</p></div><button type="button" aria-label="Close invitation form" onClick={onClose} className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container"><WorkspaceIcon name="close" className="text-xl" /></button></div><form onSubmit={onSubmit} noValidate className="mt-6 space-y-5"><label className="block text-body-sm font-semibold" htmlFor="invite-email">Email address<input autoFocus defaultValue={initialEmail} id="invite-email" name="email" type="email" autoComplete="email" placeholder="name@example.com" required aria-invalid={Boolean(fieldErrors.email)} className="mt-2 w-full rounded-lg border border-transparent bg-surface-container-low px-4 py-3.5 font-normal outline-none focus:border-primary focus:bg-surface-container-lowest focus:ring-1 focus:ring-primary" />{fieldErrors.email?.[0] && <span className="mt-2 block text-label-sm font-normal text-error">{fieldErrors.email[0]}</span>}</label><fieldset><legend className="text-body-sm font-semibold">Select workspace role</legend><div className="mt-3 space-y-3"><RoleOption value="ADMIN" title="Administrator" selected={role} onChange={setRole}>Full access to wedding settings, member invitations, and workspace roles.</RoleOption><RoleOption value="MANAGER" title="Manager" badge="Recommended" selected={role} onChange={setRole}>Can manage events, guests, invitations, tasks, vendors, and expenses.</RoleOption><RoleOption value="MEMBER" title="Member" selected={role} onChange={setRole}>Can view wedding information and update tasks assigned to them.</RoleOption></div>{fieldErrors.role?.[0] && <span className="mt-2 block text-label-sm text-error">{fieldErrors.role[0]}</span>}</fieldset>{role === "ADMIN" && <div role="note" className="flex items-start gap-2.5 rounded-lg bg-primary-fixed/60 p-3 text-body-sm leading-5 text-on-primary-fixed-variant"><WorkspaceIcon name="shield" className="mt-0.5 text-lg" /><span><strong className="block text-on-primary-fixed">Administrator access</strong>This person can edit wedding details, invite or remove members, and manage workspace roles.</span></div>}<div className="flex items-start gap-2.5 rounded-lg bg-surface-container p-3 text-body-sm leading-5 text-on-surface-variant"><WorkspaceIcon name="lock" className="mt-0.5 text-lg text-tertiary" />Invitation links are single use and expire automatically after seven days.</div>{error && <p role="alert" className="rounded-lg bg-error-container p-3 text-body-sm text-on-error-container">{error}</p>}<div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end"><button type="button" onClick={onClose} disabled={pending} className="rounded-lg bg-surface-container px-5 py-3 text-body-sm font-semibold hover:bg-surface-container-high disabled:opacity-50">Cancel</button><button type="submit" disabled={pending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3 text-body-sm font-semibold text-on-primary hover:bg-primary-container disabled:opacity-55"><WorkspaceIcon name="mail" className="text-lg" />{pending ? "Sending invitation…" : role === "ADMIN" ? "Review administrator invite" : "Send invitation"}</button></div></form></section></div>;
 }
 
-function RoleOption({ value, title, badge, children }: { value: "MANAGER" | "MEMBER"; title: string; badge?: string; children: string }) {
-  return <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-surface-container-low p-4 hover:bg-surface-container"><input defaultChecked={value === "MANAGER"} type="radio" name="role" value={value} className="mt-1 accent-primary" /><span><span className="flex flex-wrap items-center gap-2"><strong className="text-title-md">{title}</strong>{badge && <span className="rounded-full bg-secondary-container px-2 py-0.5 text-label-sm font-semibold text-on-secondary-container">{badge}</span>}</span><span className="mt-1 block text-body-sm leading-5 text-on-surface-variant">{children}</span></span></label>;
+function RoleOption({ value, title, badge, selected, onChange, children }: { value: InvitationRole; title: string; badge?: string; selected: InvitationRole; onChange: (role: InvitationRole) => void; children: string }) {
+  return <label className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors ${selected === value ? "border-primary/40 bg-primary-fixed/35" : "border-transparent bg-surface-container-low hover:bg-surface-container"}`}><input checked={selected === value} onChange={() => onChange(value)} type="radio" name="role" value={value} className="mt-1 accent-primary" /><span><span className="flex flex-wrap items-center gap-2"><strong className="text-title-md">{title}</strong>{badge && <span className="rounded-full bg-secondary-container px-2 py-0.5 text-label-sm font-semibold text-on-secondary-container">{badge}</span>}</span><span className="mt-1 block text-body-sm leading-5 text-on-surface-variant">{children}</span></span></label>;
+}
+
+function ConfirmAdministratorInvite({ email, pending, error, onCancel, onConfirm }: { email: string; pending: boolean; error: string; onCancel: () => void; onConfirm: () => void }) {
+  return <div className="fixed inset-0 z-[60] flex items-center justify-center bg-inverse-surface/45 p-5 backdrop-blur-sm"><section role="alertdialog" aria-modal="true" aria-labelledby="admin-invite-title" className="w-full max-w-md rounded-xl bg-surface p-6 shadow-2xl sm:p-8"><span className="flex h-12 w-12 items-center justify-center rounded-full bg-primary-fixed text-primary"><WorkspaceIcon name="shield" className="text-2xl" /></span><p className="mt-5 text-label-sm font-semibold uppercase tracking-[0.12em] text-primary">Full workspace access</p><h2 id="admin-invite-title" className="mt-1 font-serif text-headline-sm">Invite as an administrator?</h2><p className="mt-3 text-body-sm leading-6 text-on-surface-variant"><strong className="break-all text-on-surface">{email}</strong> will be able to edit wedding details, invite and remove members, and manage workspace roles after accepting.</p><p className="mt-4 rounded-lg bg-surface-container p-3 text-body-sm leading-5 text-on-surface-variant">Only grant this role to your partner or another person you trust with the entire wedding workspace.</p>{error && <p role="alert" className="mt-4 rounded-lg bg-error-container p-3 text-body-sm text-on-error-container">{error}</p>}<div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end"><button type="button" onClick={onCancel} disabled={pending} className="rounded-lg bg-surface-container px-4 py-2.5 text-body-sm font-semibold disabled:opacity-50">Go back</button><button type="button" onClick={onConfirm} disabled={pending} className="rounded-lg bg-primary px-4 py-2.5 text-body-sm font-semibold text-on-primary disabled:opacity-50">{pending ? "Sending invitation…" : "Invite as administrator"}</button></div></section></div>;
 }
 
 function ConfirmRevoke({ invitation, pending, onCancel, onConfirm }: { invitation: Invitation; pending: boolean; onCancel: () => void; onConfirm: () => void }) {

@@ -41,6 +41,22 @@ export async function listWeddingMembers(userId: string, weddingId: string) {
   };
 }
 
+export async function getWeddingMemberSummary(userId: string, weddingId: string) {
+  await connectToDatabase();
+  assertObjectId(weddingId);
+  const membership = await WeddingMemberModel.findOne({ userId, weddingId, status: "ACTIVE" }).lean();
+  if (!membership) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
+
+  const [activeMembers, pendingInvitations] = await Promise.all([
+    WeddingMemberModel.countDocuments({ weddingId, status: "ACTIVE" }),
+    membership.role === "ADMIN"
+      ? MemberInviteModel.countDocuments({ weddingId, status: "PENDING", expiresAt: { $gt: new Date() } })
+      : Promise.resolve(null),
+  ]);
+
+  return { activeMembers, pendingInvitations };
+}
+
 export async function createMemberInvitation(actor: InvitationActor, weddingId: string, input: CreateMemberInvitationInput) {
   await connectToDatabase();
   const { wedding } = await requireWeddingAdmin(actor.id, weddingId);
@@ -204,7 +220,7 @@ async function deliverInvitation(input: {
   actor: InvitationActor;
   wedding: { brideName: string; groomName: string };
   email: string;
-  role: "MANAGER" | "MEMBER";
+  role: "ADMIN" | "MANAGER" | "MEMBER";
   token: string;
 }) {
   try {
@@ -223,7 +239,7 @@ async function deliverInvitation(input: {
 function sanitizeInvitation(invitation: {
   _id: unknown;
   emailNormalized: string;
-  role: "MANAGER" | "MEMBER";
+  role: "ADMIN" | "MANAGER" | "MEMBER";
   status: string;
   deliveryStatus: "PENDING" | "SENT" | "FAILED";
   expiresAt: Date;

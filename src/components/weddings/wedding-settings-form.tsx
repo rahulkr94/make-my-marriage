@@ -169,7 +169,7 @@ export function WeddingSettingsForm({ weddingId, initialValues }: { weddingId: s
         <div className={`mt-7 flex items-center justify-between gap-4 border-t border-outline-variant/30 bg-surface-container-lowest pt-6 ${dirty ? "fixed inset-x-0 bottom-0 z-40 px-5 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-[0_-8px_24px_rgba(28,26,23,0.08)] sm:static sm:p-0 sm:pt-6 sm:shadow-none" : ""}`}>
           <p className="hidden items-center gap-2 text-label-sm text-on-surface-variant sm:flex"><WorkspaceIcon name="lock" className="text-secondary" /> {saved ? "Saved just now" : "Saved to your workspace"}</p>
           <div className="flex w-full gap-3 sm:w-auto">
-            <button type="button" onClick={() => router.push("/welcome")} disabled={pending} className="flex-1 rounded-lg border border-outline-variant px-5 py-3 text-body-sm font-semibold transition-colors hover:border-primary disabled:opacity-50 sm:flex-none">Cancel</button>
+            <button type="button" onClick={() => router.push("/dashboard")} disabled={pending} className="flex-1 rounded-lg border border-outline-variant px-5 py-3 text-body-sm font-semibold transition-colors hover:border-primary disabled:opacity-50 sm:flex-none">Cancel</button>
             <button type="submit" disabled={!dirty || pending} className="inline-flex flex-[1.4] items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-body-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-45 sm:flex-none">{pending ? "Saving changes…" : "Save changes"}<WorkspaceIcon name={pending ? "clock" : "check"} className="text-lg" /></button>
           </div>
         </div>

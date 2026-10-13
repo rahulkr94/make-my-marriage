@@ -14,7 +14,7 @@ const content = {
   reset: { endpoint: "/api/v1/auth/password-resets", submit: "Set new password", pending: "Updating your password…" },
 } as const;
 
-export function AuthForm({ variant, token, nextPath = "/welcome", initialEmail = "" }: { variant: Variant; token?: string; nextPath?: string; initialEmail?: string }) {
+export function AuthForm({ variant, token, nextPath = "/dashboard", initialEmail = "" }: { variant: Variant; token?: string; nextPath?: string; initialEmail?: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [message, setMessage] = useState("");

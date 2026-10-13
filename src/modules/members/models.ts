@@ -3,7 +3,7 @@ import { Schema, model, models, type InferSchemaType, type Model } from "mongoos
 const memberInviteSchema = new Schema({
   weddingId: { type: Schema.Types.ObjectId, required: true },
   emailNormalized: { type: String, required: true, trim: true, lowercase: true, maxlength: 254 },
-  role: { type: String, enum: ["MANAGER", "MEMBER"], required: true },
+  role: { type: String, enum: ["ADMIN", "MANAGER", "MEMBER"], required: true },
   tokenHash: { type: String, required: true, unique: true, select: false },
   expiresAt: { type: Date, required: true },
   status: { type: String, enum: ["PENDING", "ACCEPTED", "REVOKED", "EXPIRED"], required: true, default: "PENDING" },

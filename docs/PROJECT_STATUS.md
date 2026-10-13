@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 1 October 2026
-**Current phase:** Wedding workspace in progress; setup, settings, and member invitations complete
+**Last updated:** 13 October 2026
+**Current phase:** Dashboard foundation complete; wedding workspace remains in progress
 **Overall status:** Active development
 
 ## Purpose
@@ -20,9 +20,10 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Public homepage | Complete | Responsive marketing page at `/` with navigation, hero, labeled sample wedding workspace, feature overview, four-step workflow, guest experience, family roles, gallery preview, FAQ, and closing call to action. |
 | Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
 | Wedding workspace | In progress | Wedding setup, administrator-only settings, and secure member invitations are complete. Member role changes, removal, and permission management remain. |
+| Dashboard foundation | Complete | Responsive `/dashboard` shell uses live wedding and member data, clearly labels unavailable modules, and provides the permanent signed-in workspace destination. |
 | Events | Not started | Event creation and editing, venues, dates, directions, and live-stream links. |
 | Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
-| RSVP and dashboard | Not started | Per-event responses, attendee counts, and the initial signed-in dashboard. |
+| RSVP and dashboard metrics | Not started | Per-event responses, attendee counts, and live RSVP summaries within the dashboard. |
 | Tasks | Not started | Assignments, status updates, due dates, and wedding timeline. |
 | Finances | Not started | Expenses, vendors, bills, and private attachments. |
 | Gallery | Not started | Photo uploads, moderation, and shareable gallery access. |
@@ -157,13 +158,38 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   and administrator-only access; temporary records were removed. Corrected the
   local Resend sandbox sender and confirmed a real member invitation reached
   Resend's `Delivered` state for the account-owner test recipient.
+- Extended member invitations so an administrator can invite a trusted partner
+  or family member directly as a co-administrator. The form explains the full
+  access being granted, requires a separate confirmation, preserves the draft
+  when returning to edit it, and carries the administrator role through email,
+  acceptance, and active membership. Verified the role selector and confirmation
+  flow without sending a test invitation, plus ESLint, TypeScript, 22 unit tests,
+  and a production build.
+
+### Dashboard foundation
+
+- Added the responsive `/dashboard` workspace based on the approved Stitch
+  desktop direction, with a mobile adaptation consistent with the existing
+  workspace screens.
+- Connected live wedding details, countdown, active-member count, and pending
+  invitation count for administrators. Events, guests, RSVP, tasks, expenses,
+  and gallery areas use explicit empty states instead of fabricated user data.
+- Added working actions for wedding settings and member invitations, marked
+  future actions as unavailable, and changed signup, login, wedding setup,
+  invitation acceptance, homepage, settings, and member-navigation destinations
+  to use `/dashboard`.
+- Preserved `/welcome` as a compatibility redirect to `/dashboard`.
+- Verified the authenticated desktop and mobile layouts with isolated temporary
+  Atlas records, then removed the records. Validated with ESLint, TypeScript, 21
+  unit tests, and a production build.
 
 ## Current focus
 
-Review the completed member invitation flow. The next planned increment within
-**Wedding workspace** is member role and access management: change roles,
-promote a second administrator, remove access, and protect the final active
-administrator. Start it only when explicitly requested.
+Review the dashboard foundation and direct co-administrator invitation flow.
+The next planned increment within **Wedding workspace** remains active-member
+role and access management: change roles, promote an existing member, remove
+access, and protect the final active administrator. Start it only when
+explicitly requested.
 
 ## Update policy
 

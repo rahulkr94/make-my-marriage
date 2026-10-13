@@ -7,8 +7,8 @@ describe("safe authentication redirects", () => {
   });
 
   it("rejects external and malformed destinations", () => {
-    expect(getSafeNextPath("https://example.com")).toBe("/welcome");
-    expect(getSafeNextPath("//example.com/path")).toBe("/welcome");
-    expect(getSafeNextPath("/\\example.com")).toBe("/welcome");
+    expect(getSafeNextPath("https://example.com")).toBe("/dashboard");
+    expect(getSafeNextPath("//example.com/path")).toBe("/dashboard");
+    expect(getSafeNextPath("/\\example.com")).toBe("/dashboard");
   });
 });

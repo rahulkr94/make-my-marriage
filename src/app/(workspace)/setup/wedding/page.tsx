@@ -15,7 +15,7 @@ export default async function WeddingSetupPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
   const workspace = await getWorkspaceForUser(user.id);
-  if (workspace) redirect("/welcome");
+  if (workspace) redirect("/dashboard");
 
   const initial = (user.name || user.email).trim().charAt(0).toUpperCase();
 

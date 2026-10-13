@@ -7,7 +7,10 @@ describe("member invitation schemas", () => {
       email: "Family@Example.COM",
       role: "MANAGER",
     });
-    expect(createMemberInvitationSchema.safeParse({ email: "family@example.com", role: "ADMIN" }).success).toBe(false);
+    expect(createMemberInvitationSchema.parse({ email: "partner@example.com", role: "ADMIN" })).toEqual({
+      email: "partner@example.com",
+      role: "ADMIN",
+    });
   });
 
   it("rejects unknown fields and short acceptance tokens", () => {

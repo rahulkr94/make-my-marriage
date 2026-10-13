@@ -23,7 +23,7 @@ export function AcceptMemberInvitationButton({ token }: { token: string }) {
         setError(payload.error?.message ?? "We couldn’t accept this invitation.");
         return;
       }
-      router.push("/welcome");
+      router.push("/dashboard");
       router.refresh();
     } catch {
       setError("We couldn’t reach the server. Please try again.");

@@ -41,7 +41,7 @@ export function WeddingSetupForm() {
         return;
       }
 
-      router.replace("/welcome");
+      router.replace("/dashboard");
       router.refresh();
     } catch {
       setError("We could not reach the server. Please check your connection and try again.");
