@@ -31,6 +31,8 @@ describe("wedding setup schema", () => {
 
   it("accepts a strict partial settings update", () => {
     expect(updateWeddingSchema.parse({ brideName: "  Priyanka  " })).toEqual({ brideName: "Priyanka" });
+    expect(updateWeddingSchema.parse({ timeZone: "Europe/London", confirmTimeZoneChange: true })).toEqual({ timeZone: "Europe/London", confirmTimeZoneChange: true });
+    expect(updateWeddingSchema.safeParse({ confirmTimeZoneChange: true }).success).toBe(false);
     expect(updateWeddingSchema.safeParse({}).success).toBe(false);
     expect(updateWeddingSchema.safeParse({ role: "ADMIN" }).success).toBe(false);
   });

@@ -210,7 +210,7 @@ async function requireWeddingAdmin(userId: string, weddingId: string) {
   assertObjectId(weddingId);
   const membership = await WeddingMemberModel.findOne({ userId, weddingId, status: "ACTIVE" }).lean();
   if (!membership) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
-  if (membership.role !== "ADMIN") throw new AuthError("FORBIDDEN", "Only wedding administrators can manage members.", 403);
+  if (membership.role !== "ADMIN") throw new AuthError("FORBIDDEN", "Only wedding admins can manage members.", 403);
   const wedding = await WeddingModel.findById(weddingId).lean();
   if (!wedding) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
   return { membership, wedding };

@@ -25,9 +25,9 @@ export async function sendMemberInvitationEmail(input: {
   const safeWeddingName = escapeHtml(input.weddingName);
   const safeInviterName = escapeHtml(input.inviterName);
   const safeUrl = escapeHtml(invitationUrl);
-  const role = input.role === "ADMIN" ? "Administrator" : input.role === "MANAGER" ? "Manager" : "Member";
+  const role = input.role === "ADMIN" ? "Admin" : input.role === "MANAGER" ? "Manager" : "Member";
   const administratorNotice = input.role === "ADMIN"
-    ? "<p><strong>Administrator access:</strong> You will be able to edit wedding details, invite or remove members, and manage workspace roles.</p>"
+    ? "<p><strong>Admin access:</strong> You will be able to edit wedding details, invite or remove members, and manage workspace roles.</p>"
     : "";
   const resend = new Resend(apiKey);
   const result = await resend.emails.send({

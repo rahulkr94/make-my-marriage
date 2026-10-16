@@ -4,6 +4,7 @@ import { connectToDatabase } from "../src/lib/mongodb";
 import { PasswordResetTokenModel, RateLimitModel, SessionModel, UserModel } from "../src/modules/auth/models";
 import { WeddingMemberModel, WeddingModel } from "../src/modules/weddings/models";
 import { MemberInviteModel } from "../src/modules/members/models";
+import { EventModel } from "../src/modules/events/models";
 
 loadEnvConfig(process.cwd());
 
@@ -17,6 +18,7 @@ async function main() {
     WeddingModel.syncIndexes(),
     WeddingMemberModel.syncIndexes(),
     MemberInviteModel.syncIndexes(),
+    EventModel.syncIndexes(),
   ]);
 
   console.log("Application indexes synchronized.", results);

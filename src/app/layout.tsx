@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: {
     children: ReactNode;
 }) {
-    return (<html lang="en" className={`${playfair.variable} ${jakarta.variable}`}>
+    return (<html lang="en" data-scroll-behavior="smooth" className={`${playfair.variable} ${jakarta.variable}`}>
       <body>{children}</body>
     </html>);
 }

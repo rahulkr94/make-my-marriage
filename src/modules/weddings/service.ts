@@ -1,5 +1,7 @@
 import { connectToDatabase } from "@/lib/mongodb";
 import { AuthError } from "@/modules/auth/request-security";
+import { EventModel } from "@/modules/events/models";
+import { resolveEventSchedule } from "@/modules/events/schedule";
 import { WeddingMemberModel, WeddingModel } from "./models";
 import type { CreateWeddingInput, UpdateWeddingInput } from "./schemas";
 
@@ -81,18 +83,40 @@ export async function getWeddingForUser(userId: string, weddingId: string) {
 }
 
 export async function updateWedding(userId: string, weddingId: string, input: UpdateWeddingInput) {
-  await connectToDatabase();
-  const membership = await WeddingMemberModel.findOne({ userId, weddingId, status: "ACTIVE" }).lean();
-  if (!membership) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
-  if (membership.role !== "ADMIN") throw new AuthError("FORBIDDEN", "Only wedding administrators can update these settings.", 403);
+  const database = await connectToDatabase();
+  const session = await database.startSession();
+  const { confirmTimeZoneChange = false, ...changes } = input;
+  try {
+    return await session.withTransaction(async () => {
+      const wedding = await WeddingModel.findOneAndUpdate(
+        { _id: weddingId },
+        { $inc: { scheduleVersion: 1 } },
+        { new: true, session, timestamps: false },
+      );
+      if (!wedding) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
+      const membership = await WeddingMemberModel.findOne({ userId, weddingId, status: "ACTIVE" }).session(session).lean();
+      if (!membership) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
+      if (membership.role !== "ADMIN") throw new AuthError("FORBIDDEN", "Only wedding admins can update these settings.", 403);
 
-  const wedding = await WeddingModel.findByIdAndUpdate(
-    weddingId,
-    { $set: input },
-    { new: true, runValidators: true },
-  );
-  if (!wedding) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
-  return sanitizeWedding(wedding);
+      if (changes.timeZone && changes.timeZone !== wedding.timeZone) {
+        const futureEvents = await EventModel.find({ weddingId, deletedAt: null, startsAtUtc: { $gte: new Date() } }).session(session);
+        if (futureEvents.length && !confirmTimeZoneChange) {
+          throw new AuthError("TIME_ZONE_CONFIRMATION_REQUIRED", `Changing the time zone will recalculate ${futureEvents.length} future event ${futureEvents.length === 1 ? "time" : "times"}. Confirm this change to continue.`, 409);
+        }
+        for (const event of futureEvents) {
+          const schedule = resolveEventSchedule(event, changes.timeZone);
+          event.set(schedule);
+          await event.save({ session });
+        }
+      }
+
+      wedding.set(changes);
+      await wedding.save({ session });
+      return sanitizeWedding(wedding);
+    });
+  } finally {
+    await session.endSession();
+  }
 }
 
 function sanitizeWedding(wedding: {

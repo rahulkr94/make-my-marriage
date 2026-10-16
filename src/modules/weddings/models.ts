@@ -14,6 +14,8 @@ const weddingSchema = new Schema({
   galleryTokenHash: { type: String, select: false },
   galleryTokenVersion: { type: Number, required: true, min: 0, default: 0 },
   galleryTokenRotatedAt: { type: Date },
+  memberAccessVersion: { type: Number, default: 0, min: 0 },
+  scheduleVersion: { type: Number, default: 0, min: 0 },
 }, { timestamps: true, strict: "throw" });
 
 const weddingMemberSchema = new Schema({

@@ -18,8 +18,8 @@ export const createWeddingSchema = z.object({
   description: weddingFields.description.optional().default(""),
 }).strict();
 
-export const updateWeddingSchema = z.object(weddingFields).partial().strict().refine(
-  (value) => Object.keys(value).length > 0,
+export const updateWeddingSchema = z.object({ ...weddingFields, confirmTimeZoneChange: z.boolean() }).partial().strict().refine(
+  (value) => Object.keys(value).some((key) => key !== "confirmTimeZoneChange"),
   { message: "Include at least one wedding detail to update." },
 );
 

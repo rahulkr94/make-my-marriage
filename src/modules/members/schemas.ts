@@ -2,7 +2,7 @@ import { z } from "zod";
 
 export const createMemberInvitationSchema = z.object({
   email: z.string().trim().email("Enter a valid email address.").max(254),
-  role: z.enum(["ADMIN", "MANAGER", "MEMBER"], { message: "Choose Administrator, Manager, or Member." }),
+  role: z.enum(["ADMIN", "MANAGER", "MEMBER"], { message: "Choose Admin, Manager, or Member." }),
 }).strict();
 
 export const acceptMemberInvitationSchema = z.object({
@@ -10,3 +10,9 @@ export const acceptMemberInvitationSchema = z.object({
 }).strict();
 
 export type CreateMemberInvitationInput = z.infer<typeof createMemberInvitationSchema>;
+
+export const updateMemberRoleSchema = z.object({
+  role: z.enum(["ADMIN", "MANAGER", "MEMBER"], { message: "Choose Admin, Manager, or Member." }),
+}).strict();
+
+export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;

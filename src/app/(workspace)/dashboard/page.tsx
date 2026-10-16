@@ -6,13 +6,14 @@ import { LogoutButton } from "@/components/auth/logout-button";
 import { Brand } from "@/components/marketing/brand";
 import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
 import { getCurrentUser } from "@/modules/auth/session";
+import { canManageEvents } from "@/modules/events/constants";
+import { getUpcomingEvents, type EventView } from "@/modules/events/service";
 import { getWeddingMemberSummary } from "@/modules/members/service";
 import { getWorkspaceForUser } from "@/modules/weddings/service";
 
 export const metadata: Metadata = { title: "Dashboard | Make My Marriage" };
 
 const futureSections = [
-  { label: "Events", icon: "calendar" as const },
   { label: "Guests & invites", icon: "mail" as const },
   { label: "RSVP", icon: "check" as const },
   { label: "Tasks & timeline", icon: "clock" as const },
@@ -27,13 +28,14 @@ export default async function DashboardPage() {
   if (!workspace) redirect("/setup/wedding");
 
   const { wedding, membership } = workspace;
-  const memberSummary = await getWeddingMemberSummary(user.id, wedding.id);
+  const [memberSummary, upcomingEvents] = await Promise.all([getWeddingMemberSummary(user.id, wedding.id), getUpcomingEvents(user.id, wedding.id)]);
+  const eventManager = canManageEvents(membership.role);
   const role = titleCase(membership.role);
   const daysToGo = getDaysToGo(wedding.weddingDate);
   const firstName = user.name.trim().split(/\s+/)[0] || user.name;
   const accountInitial = (user.name || user.email).trim().charAt(0).toUpperCase();
   const pendingCopy = memberSummary.pendingInvitations === null
-    ? "Visible to wedding administrators"
+    ? "Visible to wedding admins"
     : `${memberSummary.pendingInvitations} pending invitation${memberSummary.pendingInvitations === 1 ? "" : "s"}`;
 
   return (
@@ -47,6 +49,7 @@ export default async function DashboardPage() {
           </div>
           <nav aria-label="Workspace sections" className="mt-6 space-y-1">
             <SideLink href="/dashboard" icon="dashboard" active>Overview</SideLink>
+            <SideLink href="/events" icon="calendar">Events</SideLink>
             {futureSections.map((item) => <SideLink key={item.label} icon={item.icon}>{item.label}</SideLink>)}
             {membership.role === "ADMIN" && <SideLink href="/members" icon="users">Members</SideLink>}
             {membership.role === "ADMIN" && <SideLink href="/settings/wedding" icon="settings">Wedding settings</SideLink>}
@@ -84,7 +87,7 @@ export default async function DashboardPage() {
           <div className="flex flex-wrap gap-2">
             {membership.role === "ADMIN" && <DashboardAction href="/settings/wedding" icon="settings">Edit wedding</DashboardAction>}
             {membership.role === "ADMIN" && <DashboardAction href="/members" icon="userPlus">Invite family</DashboardAction>}
-            <DashboardAction icon="calendar">Add event</DashboardAction>
+            {eventManager && <DashboardAction href="/events/new" icon="calendar">Add event</DashboardAction>}
             <DashboardAction icon="check">Add task</DashboardAction>
           </div>
         </section>
@@ -92,7 +95,7 @@ export default async function DashboardPage() {
         <section aria-labelledby="attention-title">
           <div className="flex flex-wrap items-end justify-between gap-2"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Planning pulse</p><h2 id="attention-title" className="mt-1 font-serif text-headline-sm">What needs attention</h2></div><span className="text-body-sm text-on-surface-variant">Your workspace is ready for the next feature</span></div>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <AttentionCard icon="calendar" label="Next milestone" title="Build your ceremony schedule" description="Events will add dates, times, venues, directions, and live-stream links." />
+            <AttentionCard icon="calendar" label="Ceremony schedule" title={upcomingEvents[0]?.name ?? (eventManager ? "Add your first event" : "No published events yet")} description={upcomingEvents[0] ? `${formatEventDate(upcomingEvents[0])} · ${upcomingEvents[0].venueName}` : "Dates, times, venues, and directions now live in Events & ceremonies."} href={upcomingEvents[0] ? `/events/${upcomingEvents[0].id}` : eventManager ? "/events/new" : "/events"} action={upcomingEvents[0] ? "View next event" : eventManager ? "Create event" : "View schedule"} />
             <AttentionCard icon="users" label="Wedding team" title={`${memberSummary.activeMembers} active member${memberSummary.activeMembers === 1 ? "" : "s"}`} description={pendingCopy} href={membership.role === "ADMIN" ? "/members" : undefined} action="View wedding team" />
             <AttentionCard icon="mail" label="Guest invitations" title="No guest list yet" description="Guest records and personal invitation links will appear here when that feature is built." />
             <AttentionCard icon="check" label="Planning tasks" title="No tasks yet" description="Assignments, due dates, and overdue reminders will appear after task management is available." />
@@ -108,12 +111,8 @@ export default async function DashboardPage() {
 
         <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
           <article className="rounded-xl bg-surface-container-low p-5 shadow-sm sm:p-7">
-            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Chronicle of ceremonies</p><h2 className="mt-1 font-serif text-headline-md">Upcoming events</h2></div><span className="rounded-full bg-primary-fixed px-3 py-1 text-label-sm font-semibold text-on-primary-fixed-variant">Coming next</span></div>
-            <div className="mt-6 flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest px-6 py-10 text-center">
-              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-container text-tertiary"><WorkspaceIcon name="calendar" className="text-2xl" /></span>
-              <h3 className="mt-4 font-serif text-headline-sm">Your ceremony timeline will live here</h3>
-              <p className="mt-2 max-w-lg text-body-sm leading-6 text-on-surface-variant">Once Events is built, this section will show every upcoming ritual with its time, venue, and guest information.</p>
-            </div>
+            <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Chronicle of ceremonies</p><h2 className="mt-1 font-serif text-headline-md">Upcoming events</h2></div><Link href="/events" className="rounded-full bg-primary-fixed px-3 py-1 text-label-sm font-semibold text-on-primary-fixed-variant hover:bg-primary-fixed-dim">View schedule</Link></div>
+            {upcomingEvents.length ? <div className="mt-6 divide-y divide-outline-variant/25 overflow-hidden rounded-xl bg-surface-container-lowest">{upcomingEvents.map((event) => <UpcomingEvent key={event.id} event={event} />)}</div> : <div className="mt-6 flex min-h-52 flex-col items-center justify-center rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest px-6 py-10 text-center"><span className="flex h-14 w-14 items-center justify-center rounded-full bg-surface-container text-tertiary"><WorkspaceIcon name="calendar" className="text-2xl" /></span><h3 className="mt-4 font-serif text-headline-sm">No upcoming published events</h3><p className="mt-2 max-w-lg text-body-sm leading-6 text-on-surface-variant">{eventManager ? "Create a ceremony or publish a saved draft to show it here." : "The planning team has not published the next ceremony yet."}</p>{eventManager && <Link href="/events/new" className="mt-5 rounded-lg bg-primary px-4 py-2.5 text-body-sm font-semibold text-on-primary">Add event</Link>}</div>}
           </article>
 
           <article className="rounded-xl bg-surface-container-low p-5 shadow-sm sm:p-7">
@@ -123,7 +122,7 @@ export default async function DashboardPage() {
               <ProgressItem complete title="Account and security">Your private account and session are active.</ProgressItem>
               <ProgressItem complete title="Wedding details">Date, venue, time zone, and wedding story are saved.</ProgressItem>
               <ProgressItem complete title="Family invitations">Secure member invitations are available.</ProgressItem>
-              <ProgressItem title="Events and ceremonies">The next planned feature for this workspace.</ProgressItem>
+              <ProgressItem complete title="Events and ceremonies">Ceremony scheduling, venues, directions, and publishing are ready.</ProgressItem>
             </ol>
           </article>
         </section>
@@ -170,6 +169,10 @@ function ProgressItem({ complete = false, title, children }: { complete?: boolea
   return <li className="flex gap-3"><span className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${complete ? "bg-secondary-container text-secondary" : "bg-primary-fixed text-primary"}`}>{complete ? <WorkspaceIcon name="check" className="text-sm" /> : <span className="h-1.5 w-1.5 rounded-full bg-current" />}</span><div><h3 className="text-body-sm font-semibold">{title}</h3><p className="mt-1 text-body-sm leading-5 text-on-surface-variant">{children}</p></div></li>;
 }
 
+function UpcomingEvent({ event }: { event: EventView }) {
+  return <Link href={`/events/${event.id}`} className="flex items-center gap-4 p-4 transition-colors hover:bg-surface-container sm:p-5"><span className="flex h-12 w-12 shrink-0 flex-col items-center justify-center rounded-lg bg-primary-fixed text-primary"><strong className="text-title-md leading-none">{Number(event.localDate.slice(8, 10))}</strong><span className="mt-1 text-[9px] font-semibold uppercase">{new Intl.DateTimeFormat("en", { month: "short", timeZone: "UTC" }).format(new Date(`${event.localDate}T00:00:00Z`))}</span></span><span className="min-w-0 flex-1"><span className="block truncate text-title-md font-semibold">{event.name}</span><span className="mt-1 block truncate text-body-sm text-on-surface-variant">{formatEventDate(event)} · {event.venueName}</span></span><WorkspaceIcon name="arrow" className="text-on-surface-variant" /></Link>;
+}
+
 function Detail({ label, children }: { label: string; children: ReactNode }) {
   return <div className="rounded-lg bg-surface-container-low p-4"><dt className="text-label-sm font-semibold uppercase tracking-[0.1em] text-tertiary">{label}</dt><dd className="mt-2 text-body-sm leading-6 text-on-surface">{children}</dd></div>;
 }
@@ -180,6 +183,13 @@ function Activity({ icon, title, children }: { icon: Parameters<typeof Workspace
 
 function formatWeddingDate(value: string) {
   return new Intl.DateTimeFormat("en-IN", { dateStyle: "long", timeZone: "UTC" }).format(new Date(`${value}T00:00:00Z`));
+}
+
+function formatEventDate(event: EventView) {
+  const date = new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "UTC" }).format(new Date(`${event.localDate}T00:00:00Z`));
+  const [hour, minute] = event.startLocalTime.split(":").map(Number);
+  const time = new Intl.DateTimeFormat("en-IN", { hour: "numeric", minute: "2-digit" }).format(new Date(2000, 0, 1, hour, minute));
+  return `${date} at ${time}`;
 }
 
 function getDaysToGo(value: string) {

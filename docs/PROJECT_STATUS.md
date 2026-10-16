@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 13 October 2026
-**Current phase:** Dashboard foundation complete; wedding workspace remains in progress
+**Last updated:** 16 October 2026
+**Current phase:** Events and ceremonies Release 1 complete; event editing planned next
 **Overall status:** Active development
 
 ## Purpose
@@ -19,9 +19,9 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Application scaffold | Complete | Next.js App Router, TypeScript, Tailwind CSS, ESLint, repository structure, environment examples, and Webpack-based development/build scripts are in place. |
 | Public homepage | Complete | Responsive marketing page at `/` with navigation, hero, labeled sample wedding workspace, feature overview, four-step workflow, guest experience, family roles, gallery preview, FAQ, and closing call to action. |
 | Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
-| Wedding workspace | In progress | Wedding setup, administrator-only settings, and secure member invitations are complete. Member role changes, removal, and permission management remain. |
+| Wedding workspace | Core complete | Wedding setup, Admin-only settings, invitations, role changes, and member removal are complete, including concurrent last-admin protection. Gallery moderation grant controls remain deferred to Gallery. |
 | Dashboard foundation | Complete | Responsive `/dashboard` shell uses live wedding and member data, clearly labels unavailable modules, and provides the permanent signed-in workspace destination. |
-| Events | Not started | Event creation and editing, venues, dates, directions, and live-stream links. |
+| Events | Release 1 complete | Responsive chronological listing, event creation, member-scoped details, venues, time-zone-aware schedules, directions, draft/published visibility, and dashboard integration. Editing, cancellation, live-stream links, and guest assignments remain. |
 | Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
 | RSVP and dashboard metrics | Not started | Per-event responses, attendee counts, and live RSVP summaries within the dashboard. |
 | Tasks | Not started | Assignments, status updates, due dates, and wedding timeline. |
@@ -183,13 +183,66 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   Atlas records, then removed the records. Validated with ESLint, TypeScript, 21
   unit tests, and a production build.
 
+### Wedding workspace — Member access management (15 October 2026)
+
+- Added Change role and Remove access actions to `/members`, with responsive
+  confirmation dialogs, Admin access explanations, self-access warnings, pending
+  states, recoverable errors, and immediate member/count updates.
+- Added Admin-only member PATCH and DELETE endpoints with same-origin checks,
+  strict role validation, and wedding-scoped authorization. Removal preserves
+  membership history and the account; a new invitation can reactivate membership.
+- Protected the final active Admin from demotion or removal. Transactions share
+  a wedding-level write so simultaneous changes retry and recheck both the actor
+  and the remaining Admin count. Existing weddings need no data backfill.
+- Changed user-facing Administrator labels to Admin across member management,
+  invitations, setup, dashboard messages, and authorization errors.
+- Verified promotions, removal, persistence after reload, self-demotion redirects,
+  restricted navigation, desktop layout, and mobile confirmation layout in a
+  production-build browser preview. All preview accounts were isolated in a
+  temporary database, which was removed after testing.
+- Passed ESLint, TypeScript, production build, 32 unit tests, and eight MongoDB
+  integration tests covering role enforcement, cross-wedding isolation, removal,
+  rejoining, and concurrent last-admin protection. Integration tests create and
+  clean up a separate temporary database; opt in with
+  `NODE_ENV=development MMM_RUN_DB_TESTS=1 npx vitest run tests/integration/member-access.test.ts --testTimeout=20000`.
+- Gallery moderation grants remain deferred until the Gallery feature exists.
+
+### Events and ceremonies — Release 1 (16 October 2026)
+
+- Applied the finalized Stitch desktop and mobile direction to responsive
+  `/events`, `/events/new`, and `/events/{eventId}` screens. The timeline groups
+  ceremonies chronologically and shows real published and draft counts; the
+  creation flow includes ceremony identity, local schedule, explicit overnight
+  handling, event-specific venue/address, optional HTTPS map link, description,
+  and draft or published visibility.
+- Added member-scoped event list, create, and detail APIs and a dedicated event
+  service/model. Admins and Managers can create and see drafts; Members see only
+  published events. Every query is wedding-scoped, responses are uncached, and
+  create mutations use same-origin checks, strict validation, and rate limits.
+- Stored both local date/time and resolved UTC instants. Rejected skipped or
+  repeated daylight-saving clock times, derived safe address-search directions
+  when no exact map URL exists, and added an explicit Admin confirmation flow
+  that recalculates future event instants when the wedding time zone changes.
+- Replaced the dashboard event placeholders with working navigation, a create
+  action for permitted roles, and the next three published events. Synchronized
+  the new MongoDB indexes in the configured development database.
+- Upgraded Next.js, `@next/env`, and `eslint-config-next` to 16.4.2 after a
+  production dependency audit identified advisories in the previous version;
+  the production dependency audit now reports zero vulnerabilities.
+- Verified the Admin creation journey, event details, directions fallback,
+  chronological list, dashboard event data, and mobile layout in the local
+  browser with isolated records, then removed those records. Passed ESLint,
+  TypeScript, the production build, 45 unit tests, and three isolated MongoDB
+  integration tests covering role visibility, cross-wedding isolation, and
+  future event recalculation after a time-zone change.
+
 ## Current focus
 
-Review the dashboard foundation and direct co-administrator invitation flow.
-The next planned increment within **Wedding workspace** remains active-member
-role and access management: change roles, promote an existing member, remove
-access, and protect the final active administrator. Start it only when
-explicitly requested.
+Review Events and ceremonies Release 1. The next planned increment is **event
+editing and lifecycle**: update schedules and venues, publish drafts, cancel or
+soft-delete events, add optional live-stream links, and recalculate future
+dependent reminders when those capabilities exist. Start only when explicitly
+requested.
 
 ## Update policy
 

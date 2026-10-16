@@ -36,6 +36,7 @@ export function WeddingSettingsForm({ weddingId, initialValues }: { weddingId: s
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const [error, setError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [confirmTimeZoneChange, setConfirmTimeZoneChange] = useState(false);
 
   const changedKeys = useMemo(() => (Object.keys(values) as Array<keyof WeddingSettingsValues>).filter((key) => values[key] !== baseline[key]), [baseline, values]);
   const dirty = changedKeys.length > 0;
@@ -50,6 +51,7 @@ export function WeddingSettingsForm({ weddingId, initialValues }: { weddingId: s
       delete next[key];
       return next;
     });
+    if (key === "timeZone") setConfirmTimeZoneChange(false);
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -60,7 +62,10 @@ export function WeddingSettingsForm({ weddingId, initialValues }: { weddingId: s
     setSaved(false);
     setFieldErrors({});
 
-    const body = Object.fromEntries(changedKeys.map((key) => [key, values[key]]));
+    const body = {
+      ...Object.fromEntries(changedKeys.map((key) => [key, values[key]])),
+      ...(changedKeys.includes("timeZone") ? { confirmTimeZoneChange } : {}),
+    };
     try {
       const response = await fetch(`/api/v1/weddings/${weddingId}`, {
         method: "PATCH",
@@ -155,6 +160,7 @@ export function WeddingSettingsForm({ weddingId, initialValues }: { weddingId: s
               <span className="relative mt-2 block"><WorkspaceIcon name="clock" className="pointer-events-none absolute left-3.5 top-1/2 z-[1] -translate-y-1/2 text-lg text-tertiary" /><select id="timeZone" value={values.timeZone} onChange={(event) => update("timeZone", event.currentTarget.value)} aria-invalid={Boolean(fieldErrors.timeZone)} aria-describedby={fieldErrors.timeZone ? "timeZone-error" : "timeZone-hint"} className={`${inputClasses} mt-0 appearance-none pl-11 pr-9`}>{WEDDING_TIME_ZONES.map((zone) => <option key={zone.value} value={zone.value}>{zone.label}</option>)}</select><span aria-hidden="true" className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant">⌄</span></span>
               {fieldErrors.timeZone ? <FieldError id="timeZone-error">{fieldErrors.timeZone[0]}</FieldError> : <span id="timeZone-hint" className={hintClasses}>Future schedules and countdowns use this time zone.</span>}
             </label>
+            {changedKeys.includes("timeZone") && <label className="flex items-start gap-3 rounded-xl bg-primary-fixed/55 p-4 sm:col-span-2"><input type="checkbox" checked={confirmTimeZoneChange} onChange={(event) => setConfirmTimeZoneChange(event.currentTarget.checked)} className="mt-1 accent-primary" /><span className="text-body-sm leading-6 text-on-primary-fixed-variant"><strong className="block text-on-primary-fixed">Confirm the schedule time-zone change</strong>Future event instants will be recalculated from their saved local dates and times. Review your ceremony schedule after saving.</span></label>}
             <div className="sm:col-span-2"><TextField label="Main venue or palace name" name="mainVenueName" value={values.mainVenueName} onChange={(value) => update("mainVenueName", value)} error={fieldErrors.mainVenueName?.[0]} autoComplete="organization" icon="location" hint="The main celebration venue." /></div>
             <div className="sm:col-span-2"><TextField label="Full venue address and destination" name="mainAddress" value={values.mainAddress} onChange={(value) => update("mainAddress", value)} error={fieldErrors.mainAddress?.[0]} autoComplete="street-address" icon="location" hint="Used for future directions and venue information." /></div>
             <label className="block sm:col-span-2 text-body-sm font-semibold" htmlFor="description"><span className="flex items-center justify-between gap-3"><span>Wedding welcome note</span><span className="text-label-sm font-normal text-on-surface-variant">{values.description.length} / 1,000</span></span><textarea id="description" value={values.description} onChange={(event) => update("description", event.currentTarget.value)} rows={4} maxLength={1000} aria-invalid={Boolean(fieldErrors.description)} aria-describedby={fieldErrors.description ? "description-error" : "description-hint"} className={`${inputClasses} resize-y`} />{fieldErrors.description ? <FieldError id="description-error">{fieldErrors.description[0]}</FieldError> : <span id="description-hint" className={hintClasses}>An optional note for family and future guests.</span>}</label>
@@ -170,7 +176,7 @@ export function WeddingSettingsForm({ weddingId, initialValues }: { weddingId: s
           <p className="hidden items-center gap-2 text-label-sm text-on-surface-variant sm:flex"><WorkspaceIcon name="lock" className="text-secondary" /> {saved ? "Saved just now" : "Saved to your workspace"}</p>
           <div className="flex w-full gap-3 sm:w-auto">
             <button type="button" onClick={() => router.push("/dashboard")} disabled={pending} className="flex-1 rounded-lg border border-outline-variant px-5 py-3 text-body-sm font-semibold transition-colors hover:border-primary disabled:opacity-50 sm:flex-none">Cancel</button>
-            <button type="submit" disabled={!dirty || pending} className="inline-flex flex-[1.4] items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-body-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-45 sm:flex-none">{pending ? "Saving changes…" : "Save changes"}<WorkspaceIcon name={pending ? "clock" : "check"} className="text-lg" /></button>
+            <button type="submit" disabled={!dirty || pending || (changedKeys.includes("timeZone") && !confirmTimeZoneChange)} className="inline-flex flex-[1.4] items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-body-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-45 sm:flex-none">{pending ? "Saving changes…" : "Save changes"}<WorkspaceIcon name={pending ? "clock" : "check"} className="text-lg" /></button>
           </div>
         </div>
       </form>

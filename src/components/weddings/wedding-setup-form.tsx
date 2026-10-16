@@ -120,7 +120,7 @@ export function WeddingSetupForm() {
         <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-surface-container-highest text-tertiary"><WorkspaceIcon name="shield" className="text-xl" /></span>
         <div>
           <h3 className="text-body-sm font-semibold">Workspace custodianship</h3>
-          <p className="mt-1 text-body-sm leading-6 text-on-surface-variant">You’ll become the first administrator. Each account can belong to one active wedding workspace in this version.</p>
+          <p className="mt-1 text-body-sm leading-6 text-on-surface-variant">You’ll become the first admin. Each account can belong to one active wedding workspace in this version.</p>
         </div>
       </div>
 

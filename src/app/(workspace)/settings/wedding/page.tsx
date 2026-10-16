@@ -28,7 +28,7 @@ export default async function WeddingSettingsPage() {
             <Brand />
             <nav aria-label="Workspace sections" className="hidden items-center gap-5 xl:flex">
               <Link href="/dashboard" className="py-7 text-body-sm text-on-surface-variant transition-colors hover:text-on-surface">Overview</Link>
-              <span className="py-7 text-body-sm text-on-surface-variant">Itinerary &amp; rituals</span>
+              <Link href="/events" className="py-7 text-body-sm text-on-surface-variant transition-colors hover:text-on-surface">Itinerary &amp; rituals</Link>
               <span className="py-7 text-body-sm text-on-surface-variant">Guest curation</span>
               <span className="py-7 text-body-sm text-on-surface-variant">Trousseau &amp; treasury</span>
               <span className="border-b-2 border-primary py-7 text-body-sm font-semibold text-on-surface">Settings</span>
