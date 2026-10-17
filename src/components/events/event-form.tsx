@@ -6,23 +6,23 @@ import { useMemo, useState, type FormEvent } from "react";
 import { EVENT_TYPE_LABELS, EVENT_TYPES } from "@/modules/events/constants";
 import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
 
-type FormValues = { name: string; type: (typeof EVENT_TYPES)[number]; localDate: string; startLocalTime: string; endLocalTime: string; endsNextDay: boolean; venueName: string; address: string; mapUrl: string; description: string; status: "DRAFT" | "PUBLISHED" };
+export type EventFormValues = { name: string; type: (typeof EVENT_TYPES)[number]; localDate: string; startLocalTime: string; endLocalTime: string; endsNextDay: boolean; venueName: string; address: string; mapUrl: string; description: string; status: "DRAFT" | "PUBLISHED" };
 type ApiPayload = { data?: { event?: { id: string } }; error?: { message?: string; details?: Array<{ path: string; message: string }> } };
 
-export function EventForm({ weddingId, weddingDate, timeZone, mainVenueName, mainAddress }: { weddingId: string; weddingDate: string; timeZone: string; mainVenueName: string; mainAddress: string }) {
+export function EventForm({ weddingId, weddingDate, timeZone, mainVenueName, mainAddress, mode = "create", eventId, initialValues }: { weddingId: string; weddingDate: string; timeZone: string; mainVenueName: string; mainAddress: string; mode?: "create" | "edit"; eventId?: string; initialValues?: EventFormValues }) {
   const router = useRouter();
-  const [values, setValues] = useState<FormValues>({ name: "", type: "SANGEET", localDate: weddingDate, startLocalTime: "18:00", endLocalTime: "", endsNextDay: false, venueName: "", address: "", mapUrl: "", description: "", status: "DRAFT" });
+  const [values, setValues] = useState<EventFormValues>(initialValues ?? { name: "", type: "SANGEET", localDate: weddingDate, startLocalTime: "18:00", endLocalTime: "", endsNextDay: false, venueName: "", address: "", mapUrl: "", description: "", status: "DRAFT" });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
   const summaryDate = useMemo(() => formatDate(values.localDate), [values.localDate]);
 
-  function update<K extends keyof FormValues>(key: K, value: FormValues[K]) { setValues((current) => ({ ...current, [key]: value })); setError(""); setFieldErrors((current) => { if (!current[key]) return current; const next = { ...current }; delete next[key]; return next; }); }
+  function update<K extends keyof EventFormValues>(key: K, value: EventFormValues[K]) { setValues((current) => ({ ...current, [key]: value })); setError(""); setFieldErrors((current) => { if (!current[key]) return current; const next = { ...current }; delete next[key]; return next; }); }
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setPending(true); setError(""); setFieldErrors({});
     try {
-      const response = await fetch(`/api/v1/weddings/${weddingId}/events`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
+      const response = await fetch(mode === "edit" ? `/api/v1/weddings/${weddingId}/events/${eventId}` : `/api/v1/weddings/${weddingId}/events`, { method: mode === "edit" ? "PATCH" : "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values) });
       const payload = await response.json() as ApiPayload;
       if (!response.ok || !payload.data?.event) { setError(payload.error?.message ?? "We couldn’t save this event."); setFieldErrors(group(payload.error?.details)); return; }
       router.replace(`/events/${payload.data.event.id}`); router.refresh();
@@ -53,7 +53,7 @@ export function EventForm({ weddingId, weddingDate, timeZone, mainVenueName, mai
         <div className="grid gap-3 sm:grid-cols-2"><Visibility value="DRAFT" selected={values.status} onChange={(value) => update("status", value)} title="Save as draft">Visible to Admins and Managers while you refine it.</Visibility><Visibility value="PUBLISHED" selected={values.status} onChange={(value) => update("status", value)} title="Publish event">Visible to every wedding workspace member.</Visibility></div>
       </FormSection>
       {error && <p role="alert" className="rounded-xl bg-error-container p-4 text-body-sm text-on-error-container">{error}</p>}
-      <div className="sticky bottom-0 z-20 flex flex-col-reverse gap-2 border-t border-outline-variant/30 bg-surface/95 py-4 backdrop-blur sm:flex-row sm:justify-end"><Link href="/events" className="rounded-lg border border-outline-variant px-5 py-3 text-center text-body-sm font-semibold">Cancel</Link><button type="submit" disabled={pending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-body-sm font-semibold text-on-primary disabled:opacity-50">{pending ? "Saving event…" : values.status === "DRAFT" ? "Save draft" : "Publish event"}<WorkspaceIcon name={pending ? "clock" : "arrow"} /></button></div>
+      <div className="sticky bottom-0 z-20 flex flex-col-reverse gap-2 border-t border-outline-variant/30 bg-surface/95 py-4 backdrop-blur sm:flex-row sm:justify-end"><Link href={mode === "edit" && eventId ? `/events/${eventId}` : "/events"} className="rounded-lg border border-outline-variant px-5 py-3 text-center text-body-sm font-semibold">Cancel</Link><button type="submit" disabled={pending} className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-body-sm font-semibold text-on-primary disabled:opacity-50">{pending ? "Saving event…" : mode === "edit" ? "Save changes" : values.status === "DRAFT" ? "Save draft" : "Publish event"}<WorkspaceIcon name={pending ? "clock" : mode === "edit" ? "check" : "arrow"} /></button></div>
     </div>
     <aside className="rounded-xl bg-surface-container p-5 shadow-sm lg:sticky lg:top-24"><p className="text-label-sm font-semibold uppercase tracking-[0.13em] text-tertiary">Ceremony summary</p><span className="mt-5 inline-flex rounded-full bg-primary-fixed px-3 py-1 text-label-sm font-semibold text-primary">{EVENT_TYPE_LABELS[values.type]}</span><h2 className="mt-3 font-serif text-headline-sm">{values.name || "Untitled ceremony"}</h2><dl className="mt-5 space-y-4 text-body-sm"><Summary icon="calendar" label="Date" value={summaryDate} /><Summary icon="clock" label="Time" value={`${formatTime(values.startLocalTime)}${values.endLocalTime ? ` – ${formatTime(values.endLocalTime)}${values.endsNextDay ? " next day" : ""}` : ""}`} /><Summary icon="location" label="Venue" value={values.venueName || "Location not specified"} /></dl><p className={`mt-5 rounded-lg px-3 py-2 text-body-sm font-semibold ${values.status === "PUBLISHED" ? "bg-secondary-container text-on-secondary-container" : "bg-tertiary-fixed text-on-tertiary-fixed"}`}>{values.status === "PUBLISHED" ? "Published to the wedding team" : "Draft · Internal planning only"}</p></aside>
   </form>;

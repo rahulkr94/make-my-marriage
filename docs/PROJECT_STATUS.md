@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 16 October 2026
-**Current phase:** Events and ceremonies Release 1 complete; event editing planned next
+**Last updated:** 17 October 2026
+**Current phase:** Event editing and draft publishing complete; lifecycle actions planned next
 **Overall status:** Active development
 
 ## Purpose
@@ -21,7 +21,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
 | Wedding workspace | Core complete | Wedding setup, Admin-only settings, invitations, role changes, and member removal are complete, including concurrent last-admin protection. Gallery moderation grant controls remain deferred to Gallery. |
 | Dashboard foundation | Complete | Responsive `/dashboard` shell uses live wedding and member data, clearly labels unavailable modules, and provides the permanent signed-in workspace destination. |
-| Events | Release 1 complete | Responsive chronological listing, event creation, member-scoped details, venues, time-zone-aware schedules, directions, draft/published visibility, and dashboard integration. Editing, cancellation, live-stream links, and guest assignments remain. |
+| Events | Editing complete | Responsive listing, create/edit/details flows, venues, time-zone-aware schedules, directions, draft publishing, role-based visibility, and dashboard integration. Cancellation, soft deletion, live-stream links, and guest assignments remain. |
 | Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
 | RSVP and dashboard metrics | Not started | Per-event responses, attendee counts, and live RSVP summaries within the dashboard. |
 | Tasks | Not started | Assignments, status updates, due dates, and wedding timeline. |
@@ -236,13 +236,32 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   integration tests covering role visibility, cross-wedding isolation, and
   future event recalculation after a time-zone change.
 
+### Events and ceremonies — Editing and publishing (17 October 2026)
+
+- Added a responsive `/events/{eventId}/edit` screen that reuses the approved
+  ceremony form with saved values. Admins and Managers can update ceremony
+  identity, local schedule, overnight timing, venue/address, map link,
+  description, and draft or published visibility; Members are redirected to the
+  read-only detail screen.
+- Added the wedding-scoped event PATCH endpoint with same-origin protection,
+  strict partial validation, rate limiting, and server-side role enforcement.
+  The service merges partial updates into the current event, validates the full
+  result, recalculates UTC instants in the wedding time zone, and serializes the
+  change with concurrent wedding time-zone updates.
+- Connected Edit actions on the ceremony timeline and details screen. Drafts can
+  be published directly from either surface, while Members continue to see only
+  published events.
+- Verified the prefilled edit form and draft-to-published journey in the local
+  browser with isolated records, then removed those records. Passed ESLint,
+  TypeScript, 48 unit tests, and four isolated MongoDB event integration tests
+  covering Manager updates, Member denial, cross-wedding isolation, publishing,
+  visibility, and UTC schedule recalculation.
+
 ## Current focus
 
-Review Events and ceremonies Release 1. The next planned increment is **event
-editing and lifecycle**: update schedules and venues, publish drafts, cancel or
-soft-delete events, add optional live-stream links, and recalculate future
-dependent reminders when those capabilities exist. Start only when explicitly
-requested.
+Review event editing and draft publishing. The next planned Events increment is
+**lifecycle and streaming**: cancellation, soft deletion with retained history,
+and optional validated live-stream links. Start only when explicitly requested.
 
 ## Update policy
 

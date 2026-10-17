@@ -5,7 +5,7 @@ import { WeddingMemberModel, WeddingModel } from "@/modules/weddings/models";
 import { canManageEvents, EVENTS_PAGE_SIZE } from "./constants";
 import { EventModel, type WeddingEvent } from "./models";
 import { getDirectionsUrl, resolveEventSchedule } from "./schedule";
-import type { CreateEventInput } from "./schemas";
+import { createEventSchema, type CreateEventInput, type UpdateEventInput } from "./schemas";
 
 async function requireMembership(userId: string, weddingId: string, session?: ClientSession) {
   if (!isValidObjectId(weddingId)) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
@@ -49,6 +49,32 @@ export async function getEvent(userId: string, weddingId: string, eventId: strin
   if (!isValidObjectId(eventId)) return null;
   const event = await EventModel.findOne({ _id: eventId, weddingId, deletedAt: null, ...(canManageEvents(membership.role) ? {} : { status: "PUBLISHED" }) }).lean();
   return event ? serializeEvent(event) : null;
+}
+export async function updateEvent(userId: string, weddingId: string, eventId: string, input: UpdateEventInput) {
+  const database = await connectToDatabase();
+  if (!isValidObjectId(weddingId) || !isValidObjectId(eventId)) throw new AuthError("NOT_FOUND", "Event not found.", 404);
+  const session = await database.startSession();
+  try {
+    return await session.withTransaction(async () => {
+      const wedding = await WeddingModel.findOneAndUpdate({ _id: weddingId }, { $inc: { scheduleVersion: 1 } }, { new: true, session, timestamps: false });
+      if (!wedding) throw new AuthError("NOT_FOUND", "Event not found.", 404);
+      const membership = await requireMembership(userId, weddingId, session);
+      if (!canManageEvents(membership.role)) throw new AuthError("FORBIDDEN", "Only Admins and Managers can edit events.", 403);
+      const event = await EventModel.findOne({ _id: eventId, weddingId, deletedAt: null }).session(session);
+      if (!event) throw new AuthError("NOT_FOUND", "Event not found.", 404);
+      const values = createEventSchema.parse({
+        name: event.name, type: event.type, localDate: event.localDate, startLocalTime: event.startLocalTime,
+        endLocalTime: event.endLocalTime, endsNextDay: event.endsNextDay, venueName: event.venueName,
+        address: event.address, mapUrl: event.mapUrl, description: event.description, status: event.status,
+        ...input,
+      });
+      event.set({ ...values, ...resolveEventSchedule(values, wedding.timeZone) });
+      await event.save({ session });
+      return serializeEvent(event);
+    });
+  } finally {
+    await session.endSession();
+  }
 }
 export async function getUpcomingEvents(userId: string, weddingId: string) {
   await connectToDatabase();
