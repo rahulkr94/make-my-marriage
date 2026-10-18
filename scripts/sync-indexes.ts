@@ -6,6 +6,7 @@ import { WeddingMemberModel, WeddingModel } from "../src/modules/weddings/models
 import { MemberInviteModel } from "../src/modules/members/models";
 import { EventModel } from "../src/modules/events/models";
 import { EventGuestModel, GuestModel } from "../src/modules/guests/models";
+import { GuestInvitationModel } from "../src/modules/invitations/models";
 
 loadEnvConfig(process.cwd());
 
@@ -22,6 +23,7 @@ async function main() {
     EventModel.syncIndexes(),
     GuestModel.syncIndexes(),
     EventGuestModel.syncIndexes(),
+    GuestInvitationModel.syncIndexes(),
   ]);
 
   console.log("Application indexes synchronized.", results);

@@ -2,6 +2,7 @@ import { isValidObjectId, Types, type ClientSession } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { AuthError } from "@/modules/auth/request-security";
 import { EventModel } from "@/modules/events/models";
+import { GuestInvitationModel } from "@/modules/invitations/models";
 import { WeddingMemberModel, WeddingModel } from "@/modules/weddings/models";
 import { canManageGuests, GUESTS_PAGE_SIZE } from "./constants";
 import { EventGuestModel, GuestModel, type Guest } from "./models";
@@ -159,6 +160,7 @@ export async function removeGuest(userId: string, weddingId: string, guestId: st
       const guest = await GuestModel.findOneAndUpdate({ _id: guestId, weddingId, status: "ACTIVE" }, { $set: { status: "REMOVED", removedAt: now } }, { new: true, session });
       if (!guest) throw new AuthError("NOT_FOUND", "Guest not found.", 404);
       await EventGuestModel.updateMany({ weddingId, guestId, status: "ACTIVE" }, { $set: { status: "REMOVED", removedAt: now } }, { session });
+      await GuestInvitationModel.updateMany({ weddingId, guestId, status: "ACTIVE" }, { $set: { status: "REVOKED", revokedAt: now } }, { session });
       return { id: String(guest._id), removed: true as const };
     });
   } finally {

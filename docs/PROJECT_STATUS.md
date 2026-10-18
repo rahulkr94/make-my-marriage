@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 18 October 2026
-**Current phase:** Guest records and event assignments complete; personal guest invitations planned next
+**Last updated:** 19 October 2026
+**Current phase:** Personal guest invitations, public ceremony access, email delivery, and QR codes complete; RSVP planned next
 **Overall status:** Active development
 
 ## Purpose
@@ -22,7 +22,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Wedding workspace | Core complete | Wedding setup, Admin-only settings, invitations, role changes, and member removal are complete, including concurrent last-admin protection. Gallery moderation grant controls remain deferred to Gallery. |
 | Dashboard foundation | Complete | Responsive `/dashboard` shell uses live wedding and member data, clearly labels unavailable modules, and provides the permanent signed-in workspace destination. |
 | Events | Lifecycle complete | Responsive listing, create/edit/details flows, venues, time-zone-aware schedules, directions, draft publishing, cancellation/restoration, soft deletion, optional live-stream links, role-based visibility, and dashboard integration. Guest assignments continue in the Guests milestone. |
-| Guests and invitations | Foundation complete | Responsive guest records, private planner details, filters, soft removal, and published-event assignments are complete. Personal invitation links, delivery, and QR codes remain. |
+| Guests and invitations | Complete | Responsive guest records, event assignments, high-entropy private links, email/manual delivery, public assigned-event invitations, revocation, regeneration, and downloadable QR codes are complete. |
 | RSVP and dashboard metrics | Not started | Per-event responses, attendee counts, and live RSVP summaries within the dashboard. |
 | Tasks | Not started | Assignments, status updates, due dates, and wedding timeline. |
 | Finances | Not started | Expenses, vendors, bills, and private attachments. |
@@ -297,11 +297,41 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   the new indexes in the configured development database and reviewed the live
   desktop list and form without changing user data.
 
+### Personal guest invitations and QR access (19 October 2026)
+
+- Applied the finalized Stitch direction to responsive guest-invitation
+  management, guest-specific invitation details, the public desktop/mobile
+  invitation, and a generic unavailable-link state. Added permanent Invitations
+  navigation plus direct access from the Guests screen.
+- Added planner-only issuance, email send/resend, revocation, and new-link/QR
+  endpoints. Guest credentials use high-entropy random tokens with only SHA-256
+  hashes stored; every regenerate, resend, or administrator QR action rotates
+  the credential and invalidates earlier links and QR codes.
+- Added the `guest_invitations` collection and controlled indexes, delivery
+  states, expiry after the wedding, immediate revocation when a guest is
+  removed, action rate limits, same-origin mutation checks, and one-time raw-link
+  display with manual-copy fallback when Resend cannot deliver.
+- Added the private `/i/{token}` experience with only the active guest name,
+  public wedding details, and currently assigned published events. Directions
+  and enabled livestream links are projected per event; guest contact details,
+  notes, workspace records, and unassigned events remain private. Token pages
+  are uncached, excluded from search indexing, and use a no-referrer policy.
+- Added downloadable guest QR codes that encode the same private invitation URL;
+  they do not represent check-in state. A guest can also reveal and download the
+  current invitation QR from the public page.
+- Passed ESLint, TypeScript, the production build, 65 unit tests, and seven
+  isolated MongoDB integration tests covering hashed storage, current-assignment
+  projection, link rotation, QR generation, planner authorization, revocation,
+  removal, and missing-email behavior. Synchronized invitation indexes, verified
+  zero production dependency advisories, and reviewed desktop/mobile planner
+  screens plus the unavailable public state in the live local browser without
+  changing user data.
+
 ## Current focus
 
-Review guest records and event assignments. The next planned increment is
-**personal guest invitations**: high-entropy guest links, email/manual delivery,
-assigned-event projection, revocation/regeneration, and downloadable QR codes.
+Review guest invitation generation and the public assigned-event experience.
+The next planned increment is **RSVP collection**: per-event Yes/No responses,
+attendee counts, response closing, planner summaries, and live dashboard metrics.
 Start only when explicitly requested.
 
 ## Update policy
