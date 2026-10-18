@@ -8,13 +8,13 @@ import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
 import { getCurrentUser } from "@/modules/auth/session";
 import { canManageEvents } from "@/modules/events/constants";
 import { getUpcomingEvents, type EventView } from "@/modules/events/service";
+import { getGuestSummary } from "@/modules/guests/service";
 import { getWeddingMemberSummary } from "@/modules/members/service";
 import { getWorkspaceForUser } from "@/modules/weddings/service";
 
 export const metadata: Metadata = { title: "Dashboard | Make My Marriage" };
 
 const futureSections = [
-  { label: "Guests & invites", icon: "mail" as const },
   { label: "RSVP", icon: "check" as const },
   { label: "Tasks & timeline", icon: "clock" as const },
   { label: "Expenses", icon: "payments" as const },
@@ -28,8 +28,8 @@ export default async function DashboardPage() {
   if (!workspace) redirect("/setup/wedding");
 
   const { wedding, membership } = workspace;
-  const [memberSummary, upcomingEvents] = await Promise.all([getWeddingMemberSummary(user.id, wedding.id), getUpcomingEvents(user.id, wedding.id)]);
   const eventManager = canManageEvents(membership.role);
+  const [memberSummary, upcomingEvents, guestSummary] = await Promise.all([getWeddingMemberSummary(user.id, wedding.id), getUpcomingEvents(user.id, wedding.id), eventManager ? getGuestSummary(user.id, wedding.id) : Promise.resolve(null)]);
   const role = titleCase(membership.role);
   const daysToGo = getDaysToGo(wedding.weddingDate);
   const firstName = user.name.trim().split(/\s+/)[0] || user.name;
@@ -50,6 +50,7 @@ export default async function DashboardPage() {
           <nav aria-label="Workspace sections" className="mt-6 space-y-1">
             <SideLink href="/dashboard" icon="dashboard" active>Overview</SideLink>
             <SideLink href="/events" icon="calendar">Events</SideLink>
+            {eventManager && <SideLink href="/guests" icon="users">Guests</SideLink>}
             {futureSections.map((item) => <SideLink key={item.label} icon={item.icon}>{item.label}</SideLink>)}
             {membership.role === "ADMIN" && <SideLink href="/members" icon="users">Members</SideLink>}
             {membership.role === "ADMIN" && <SideLink href="/settings/wedding" icon="settings">Wedding settings</SideLink>}
@@ -88,23 +89,24 @@ export default async function DashboardPage() {
             {membership.role === "ADMIN" && <DashboardAction href="/settings/wedding" icon="settings">Edit wedding</DashboardAction>}
             {membership.role === "ADMIN" && <DashboardAction href="/members" icon="userPlus">Invite family</DashboardAction>}
             {eventManager && <DashboardAction href="/events/new" icon="calendar">Add event</DashboardAction>}
+            {eventManager && <DashboardAction href="/guests/new" icon="userPlus">Add guest</DashboardAction>}
             <DashboardAction icon="check">Add task</DashboardAction>
           </div>
         </section>
 
         <section aria-labelledby="attention-title">
-          <div className="flex flex-wrap items-end justify-between gap-2"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Planning pulse</p><h2 id="attention-title" className="mt-1 font-serif text-headline-sm">What needs attention</h2></div><span className="text-body-sm text-on-surface-variant">Your workspace is ready for the next feature</span></div>
+          <div className="flex flex-wrap items-end justify-between gap-2"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Planning pulse</p><h2 id="attention-title" className="mt-1 font-serif text-headline-sm">What needs attention</h2></div><span className="text-body-sm text-on-surface-variant">Events and guest records are ready to organise</span></div>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <AttentionCard icon="calendar" label="Ceremony schedule" title={upcomingEvents[0]?.name ?? (eventManager ? "Add your first event" : "No published events yet")} description={upcomingEvents[0] ? `${formatEventDate(upcomingEvents[0])} · ${upcomingEvents[0].venueName}` : "Dates, times, venues, and directions now live in Events & ceremonies."} href={upcomingEvents[0] ? `/events/${upcomingEvents[0].id}` : eventManager ? "/events/new" : "/events"} action={upcomingEvents[0] ? "View next event" : eventManager ? "Create event" : "View schedule"} />
             <AttentionCard icon="users" label="Wedding team" title={`${memberSummary.activeMembers} active member${memberSummary.activeMembers === 1 ? "" : "s"}`} description={pendingCopy} href={membership.role === "ADMIN" ? "/members" : undefined} action="View wedding team" />
-            <AttentionCard icon="mail" label="Guest invitations" title="No guest list yet" description="Guest records and personal invitation links will appear here when that feature is built." />
+            <AttentionCard icon="mail" label="Wedding guestbook" title={guestSummary ? `${guestSummary.activeGuests} active guest${guestSummary.activeGuests === 1 ? "" : "s"}` : "Managed by the planning team"} description={guestSummary ? "Add guests and assign the published ceremonies they are invited to." : "Admins and Managers organise private guest records and ceremony assignments."} href={guestSummary ? "/guests" : undefined} action="Open guestbook" />
             <AttentionCard icon="check" label="Planning tasks" title="No tasks yet" description="Assignments, due dates, and overdue reminders will appear after task management is available." />
           </div>
         </section>
 
         <section aria-label="Wedding metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <MetricCard icon="users" label="Wedding team" value={String(memberSummary.activeMembers)} detail="Active members" href={membership.role === "ADMIN" ? "/members" : undefined} />
-          <MetricCard icon="mail" label="Guest responses" value="0" detail="Guest feature not started" />
+          <MetricCard icon="mail" label="Wedding guests" value={guestSummary ? String(guestSummary.activeGuests) : "—"} detail={guestSummary ? "Active guest records" : "Visible to planners"} href={guestSummary ? "/guests" : undefined} />
           <MetricCard icon="payments" label="Expenses logged" value="₹0" detail="Finance feature not started" />
           <MetricCard icon="gallery" label="Shared photos" value="0" detail="Gallery feature not started" />
         </section>
@@ -123,6 +125,7 @@ export default async function DashboardPage() {
               <ProgressItem complete title="Wedding details">Date, venue, time zone, and wedding story are saved.</ProgressItem>
               <ProgressItem complete title="Family invitations">Secure member invitations are available.</ProgressItem>
               <ProgressItem complete title="Events and ceremonies">Ceremony scheduling, venues, directions, and publishing are ready.</ProgressItem>
+              <ProgressItem complete title="Guestbook foundation">Guest records and ceremony assignments are ready for invitation links.</ProgressItem>
             </ol>
           </article>
         </section>

@@ -2,6 +2,7 @@ import { isValidObjectId, type ClientSession } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { AuthError } from "@/modules/auth/request-security";
 import { WeddingMemberModel, WeddingModel } from "@/modules/weddings/models";
+import { EventGuestModel } from "@/modules/guests/models";
 import { canManageEvents, EVENTS_PAGE_SIZE } from "./constants";
 import { EventModel, type WeddingEvent } from "./models";
 import { getDirectionsUrl, resolveEventSchedule } from "./schedule";
@@ -98,6 +99,7 @@ export async function removeEvent(userId: string, weddingId: string, eventId: st
         { new: true, session },
       );
       if (!event) throw new AuthError("NOT_FOUND", "Event not found.", 404);
+      await EventGuestModel.updateMany({ weddingId, eventId, status: "ACTIVE" }, { $set: { status: "REMOVED", removedAt: new Date() } }, { session });
       return { id: String(event._id), removed: true as const };
     });
   } finally {

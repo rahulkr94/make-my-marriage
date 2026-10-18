@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 17 October 2026
-**Current phase:** Event lifecycle and streaming complete; guest records and event assignments planned next
+**Last updated:** 18 October 2026
+**Current phase:** Guest records and event assignments complete; personal guest invitations planned next
 **Overall status:** Active development
 
 ## Purpose
@@ -22,7 +22,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Wedding workspace | Core complete | Wedding setup, Admin-only settings, invitations, role changes, and member removal are complete, including concurrent last-admin protection. Gallery moderation grant controls remain deferred to Gallery. |
 | Dashboard foundation | Complete | Responsive `/dashboard` shell uses live wedding and member data, clearly labels unavailable modules, and provides the permanent signed-in workspace destination. |
 | Events | Lifecycle complete | Responsive listing, create/edit/details flows, venues, time-zone-aware schedules, directions, draft publishing, cancellation/restoration, soft deletion, optional live-stream links, role-based visibility, and dashboard integration. Guest assignments continue in the Guests milestone. |
-| Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
+| Guests and invitations | Foundation complete | Responsive guest records, private planner details, filters, soft removal, and published-event assignments are complete. Personal invitation links, delivery, and QR codes remain. |
 | RSVP and dashboard metrics | Not started | Per-event responses, attendee counts, and live RSVP summaries within the dashboard. |
 | Tasks | Not started | Assignments, status updates, due dates, and wedding timeline. |
 | Finances | Not started | Expenses, vendors, bills, and private attachments. |
@@ -275,11 +275,34 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   integration tests covering cancellation, restoration, soft deletion, Member
   denial, cross-wedding isolation, live-stream persistence, and retained history.
 
+### Guests and event assignments — Foundation (18 October 2026)
+
+- Applied the finalized Stitch desktop and mobile guestbook direction to
+  responsive `/guests`, `/guests/new`, and `/guests/{guestId}/edit` screens with
+  live summary counts, search, side/relationship/event filters, desktop tables,
+  mobile cards, empty states, and accessible form controls.
+- Added planner-only guest creation, editing, listing, details, and soft removal.
+  Guest records store optional contact details, wedding side, relationship, and
+  private notes; Members cannot access the private guest-management surface or
+  APIs.
+- Added published-event assignment management with same-wedding validation,
+  retained assignment history, immediate assignment removal, and automatic
+  deactivation when either a guest or event is removed. Draft, cancelled,
+  deleted, and cross-wedding events cannot be assigned.
+- Added wedding-scoped guest and assignment collections, controlled indexes,
+  same-origin mutations, strict validation, action rate limits, dashboard guest
+  totals/actions, and live Guests navigation for Admins and Managers.
+- Passed ESLint, TypeScript, 59 unit tests, three isolated MongoDB guest
+  integration tests, and the existing five event integration tests. Synchronized
+  the new indexes in the configured development database and reviewed the live
+  desktop list and form without changing user data.
+
 ## Current focus
 
-Review event lifecycle and streaming. The next planned milestone is **Guests and
-event assignments**: guest records, filtering, editing/removal, and assignment to
-published events. Start only when explicitly requested.
+Review guest records and event assignments. The next planned increment is
+**personal guest invitations**: high-entropy guest links, email/manual delivery,
+assigned-event projection, revocation/regeneration, and downloadable QR codes.
+Start only when explicitly requested.
 
 ## Update policy
 
