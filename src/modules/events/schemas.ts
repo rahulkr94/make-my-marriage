@@ -20,20 +20,25 @@ const eventFields = {
   venueName: z.string().trim().min(2, "Enter a venue name.").max(120),
   address: z.string().trim().min(5, "Enter the venue address.").max(300),
   mapUrl: z.string().trim().max(2048).refine(safeHttpsUrl, "Use a full HTTPS map link without login credentials."),
+  liveStreamUrl: z.string().trim().max(2048).refine(safeHttpsUrl, "Use a full HTTPS live-stream link without login credentials."),
   description: z.string().trim().max(2000, "Use no more than 2,000 characters."),
-  status: z.enum(["DRAFT", "PUBLISHED"]),
 };
 export const createEventSchema = z.object({
   ...eventFields,
   endLocalTime: eventFields.endLocalTime.optional().default(""),
   endsNextDay: eventFields.endsNextDay.optional().default(false),
   mapUrl: eventFields.mapUrl.optional().default(""),
+  liveStreamUrl: eventFields.liveStreamUrl.optional().default(""),
   description: eventFields.description.optional().default(""),
+  status: z.enum(["DRAFT", "PUBLISHED"]),
 }).strict().superRefine((value, ctx) => {
   if (value.endsNextDay && !value.endLocalTime) ctx.addIssue({ code: "custom", path: ["endLocalTime"], message: "Enter an end time when ending the next day." });
   if (value.endLocalTime && !value.endsNextDay && value.endLocalTime <= value.startLocalTime) ctx.addIssue({ code: "custom", path: ["endLocalTime"], message: "End time must follow the start time. For overnight events, choose Ends the next day." });
 });
 export type CreateEventInput = z.infer<typeof createEventSchema>;
-export const updateEventSchema = z.object(eventFields).partial().strict().refine((value) => Object.keys(value).length > 0, { message: "Include at least one event detail to update." });
+export const updateEventSchema = z.object({
+  ...eventFields,
+  status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED"]),
+}).partial().strict().refine((value) => Object.keys(value).length > 0, { message: "Include at least one event detail to update." });
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export const eventListQuerySchema = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1) }).strict();

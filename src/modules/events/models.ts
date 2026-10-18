@@ -15,6 +15,7 @@ const eventSchema = new Schema({
   venueName: { type: String, required: true, trim: true, maxlength: 120 },
   address: { type: String, required: true, trim: true, maxlength: 300 },
   mapUrl: { type: String, default: "", maxlength: 2048 },
+  liveStreamUrl: { type: String, default: "", maxlength: 2048 },
   description: { type: String, default: "", maxlength: 2000 },
   status: { type: String, enum: ["DRAFT", "PUBLISHED", "CANCELLED"], required: true },
   deletedAt: { type: Date, default: null },

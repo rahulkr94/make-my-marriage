@@ -6,12 +6,12 @@ import { useMemo, useState, type FormEvent } from "react";
 import { EVENT_TYPE_LABELS, EVENT_TYPES } from "@/modules/events/constants";
 import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
 
-export type EventFormValues = { name: string; type: (typeof EVENT_TYPES)[number]; localDate: string; startLocalTime: string; endLocalTime: string; endsNextDay: boolean; venueName: string; address: string; mapUrl: string; description: string; status: "DRAFT" | "PUBLISHED" };
+export type EventFormValues = { name: string; type: (typeof EVENT_TYPES)[number]; localDate: string; startLocalTime: string; endLocalTime: string; endsNextDay: boolean; venueName: string; address: string; mapUrl: string; liveStreamUrl: string; description: string; status: "DRAFT" | "PUBLISHED" };
 type ApiPayload = { data?: { event?: { id: string } }; error?: { message?: string; details?: Array<{ path: string; message: string }> } };
 
-export function EventForm({ weddingId, weddingDate, timeZone, mainVenueName, mainAddress, mode = "create", eventId, initialValues }: { weddingId: string; weddingDate: string; timeZone: string; mainVenueName: string; mainAddress: string; mode?: "create" | "edit"; eventId?: string; initialValues?: EventFormValues }) {
+export function EventForm({ weddingId, weddingDate, timeZone, mainVenueName, mainAddress, mode = "create", eventId, initialValues, restoringCancelled = false }: { weddingId: string; weddingDate: string; timeZone: string; mainVenueName: string; mainAddress: string; mode?: "create" | "edit"; eventId?: string; initialValues?: EventFormValues; restoringCancelled?: boolean }) {
   const router = useRouter();
-  const [values, setValues] = useState<EventFormValues>(initialValues ?? { name: "", type: "SANGEET", localDate: weddingDate, startLocalTime: "18:00", endLocalTime: "", endsNextDay: false, venueName: "", address: "", mapUrl: "", description: "", status: "DRAFT" });
+  const [values, setValues] = useState<EventFormValues>(initialValues ?? { name: "", type: "SANGEET", localDate: weddingDate, startLocalTime: "18:00", endLocalTime: "", endsNextDay: false, venueName: "", address: "", mapUrl: "", liveStreamUrl: "", description: "", status: "DRAFT" });
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({});
@@ -32,6 +32,7 @@ export function EventForm({ weddingId, weddingDate, timeZone, mainVenueName, mai
 
   return <form onSubmit={submit} noValidate className="grid items-start gap-7 lg:grid-cols-[minmax(0,1fr)_22rem]">
     <div className="space-y-6">
+      {restoringCancelled && <div role="note" className="rounded-xl bg-tertiary-fixed p-4 text-body-sm leading-6 text-on-tertiary-fixed"><strong className="block">This event is cancelled</strong>Saving these changes will restore it as a private draft. You can review it before publishing it again.</div>}
       <FormSection eyebrow="01 · Ceremony identity" title="Name the moment">
         <Field label="Event name" name="name" value={values.name} onChange={(value) => update("name", value)} placeholder="e.g. Sangeet under the stars" error={fieldErrors.name?.[0]} />
         <fieldset className="mt-5"><legend className="text-body-sm font-semibold">Ceremony type</legend><div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{EVENT_TYPES.map((type) => <label key={type} className={`cursor-pointer rounded-xl border p-3 text-center text-body-sm font-semibold transition ${values.type === type ? "border-primary bg-primary-fixed/45 text-primary" : "border-transparent bg-surface hover:bg-surface-container"}`}><input className="sr-only" type="radio" name="type" checked={values.type === type} onChange={() => update("type", type)} />{EVENT_TYPE_LABELS[type]}</label>)}</div></fieldset>
@@ -46,7 +47,7 @@ export function EventForm({ weddingId, weddingDate, timeZone, mainVenueName, mai
 
       <FormSection eyebrow="03 · Venue and directions" title="Guide everyone there" action={<button type="button" onClick={() => setValues((current) => ({ ...current, venueName: mainVenueName, address: mainAddress }))} className="rounded-lg bg-surface px-3 py-2 text-label-md font-semibold text-primary hover:bg-surface-container"><WorkspaceIcon name="location" className="mr-1 inline text-lg" />Use wedding venue</button>}>
         <div className="grid gap-5 sm:grid-cols-2"><Field label="Venue name" name="venueName" value={values.venueName} onChange={(value) => update("venueName", value)} placeholder="Venue or palace name" error={fieldErrors.venueName?.[0]} /><Field label="Full address" name="address" value={values.address} onChange={(value) => update("address", value)} placeholder="Street, city, state" error={fieldErrors.address?.[0]} /></div>
-        <div className="mt-5"><Field label="Map link (optional)" name="mapUrl" type="url" value={values.mapUrl} onChange={(value) => update("mapUrl", value)} placeholder="https://maps.google.com/…" error={fieldErrors.mapUrl?.[0]} hint="Use a complete HTTPS Google or Apple Maps URL. Without one, directions search the address." /></div>
+        <div className="mt-5 grid gap-5 sm:grid-cols-2"><Field label="Map link (optional)" name="mapUrl" type="url" value={values.mapUrl} onChange={(value) => update("mapUrl", value)} placeholder="https://maps.google.com/…" error={fieldErrors.mapUrl?.[0]} hint="Without one, directions search the address." /><Field label="Live-stream link (optional)" name="liveStreamUrl" type="url" value={values.liveStreamUrl} onChange={(value) => update("liveStreamUrl", value)} placeholder="https://youtube.com/…" error={fieldErrors.liveStreamUrl?.[0]} hint="Use a complete HTTPS link for YouTube, Zoom, Meet, or another provider." /></div>
       </FormSection>
 
       <FormSection eyebrow="04 · Visibility" title="Choose who can see it">

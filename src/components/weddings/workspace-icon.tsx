@@ -16,12 +16,15 @@ const paths = {
   mail: "M3 5h18v14H3zM3 7l9 6 9-6",
   payments: "M3 6h18v12H3zM3 10h18m-4 4h1",
   refresh: "M20 7v5h-5M4 17v-5h5m9.5-3A7 7 0 0 0 6 7l-2 5m2 3a7 7 0 0 0 12.5 2l1.5-5",
+  trash: "M4 7h16m-10 4v6m4-6v6M8 7l1-3h6l1 3m2 0-1 14H7L6 7",
+  undo: "M9 7 4 12l5 5m-5-5h9a7 7 0 0 1 7 7",
   plus: "M12 5v14M5 12h14",
   settings: "M12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6Zm0-7 1 2.5 2.2.9 2.5-1 2 2-1 2.5.9 2.2 2.5 1v2.8l-2.5 1-.9 2.2 1 2.5-2 2-2.5-1-2.2.9-1 2.5H9.2l-1-2.5-2.2-.9-2.5 1-2-2 1-2.5-.9-2.2-2.5-1V9.2l2.5-1 .9-2.2-1-2.5 2-2 2.5 1 2.2-.9 1-2.5H12Z",
   shield: "M12 3 4 6v6c0 5 3.4 8 8 10 4.6-2 8-5 8-10V6l-8-3Zm-3 9 2 2 4-5",
   sparkle: "M12 2c.8 5.4 3.6 8.2 9 9-5.4.8-8.2 3.6-9 9-.8-5.4-3.6-8.2-9-9 5.4-.8 8.2-3.6 9-9Z",
   userPlus: "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM3 21v-3a6 6 0 0 1 12 0v3m4-10v6m-3-3h6",
   users: "M8 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm8-1a3 3 0 1 0 0-6M2 21v-3a6 6 0 0 1 12 0v3m2-8a5 5 0 0 1 6 5v3",
+  video: "M3 6h13v12H3zM16 10l5-3v10l-5-3",
 } as const;
 
 export function WorkspaceIcon({ name, className = "" }: { name: keyof typeof paths; className?: string }) {

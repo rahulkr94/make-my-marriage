@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
 **Last updated:** 17 October 2026
-**Current phase:** Event editing and draft publishing complete; lifecycle actions planned next
+**Current phase:** Event lifecycle and streaming complete; guest records and event assignments planned next
 **Overall status:** Active development
 
 ## Purpose
@@ -21,7 +21,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
 | Wedding workspace | Core complete | Wedding setup, Admin-only settings, invitations, role changes, and member removal are complete, including concurrent last-admin protection. Gallery moderation grant controls remain deferred to Gallery. |
 | Dashboard foundation | Complete | Responsive `/dashboard` shell uses live wedding and member data, clearly labels unavailable modules, and provides the permanent signed-in workspace destination. |
-| Events | Editing complete | Responsive listing, create/edit/details flows, venues, time-zone-aware schedules, directions, draft publishing, role-based visibility, and dashboard integration. Cancellation, soft deletion, live-stream links, and guest assignments remain. |
+| Events | Lifecycle complete | Responsive listing, create/edit/details flows, venues, time-zone-aware schedules, directions, draft publishing, cancellation/restoration, soft deletion, optional live-stream links, role-based visibility, and dashboard integration. Guest assignments continue in the Guests milestone. |
 | Guests and invitations | Not started | Guest records, event assignments, invitation links, and QR codes. |
 | RSVP and dashboard metrics | Not started | Per-event responses, attendee counts, and live RSVP summaries within the dashboard. |
 | Tasks | Not started | Assignments, status updates, due dates, and wedding timeline. |
@@ -257,11 +257,29 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   covering Manager updates, Member denial, cross-wedding isolation, publishing,
   visibility, and UTC schedule recalculation.
 
+### Events and ceremonies — Lifecycle and streaming (17 October 2026)
+
+- Added optional HTTPS live-stream links to event creation, editing, storage, and
+  member-visible event details. External stream actions open safely in a new tab;
+  assigned-guest projection remains part of the upcoming guest invitation flow.
+- Added planner-only cancellation with an explicit confirmation, a retained
+  Cancelled state in the ceremony timeline, and restoration to a private draft.
+  Members, dashboard upcoming-event queries, and future guest views receive only
+  published events.
+- Added planner-only event removal with stronger confirmation and a wedding-scoped
+  soft delete. Removed events disappear from timelines and details while their
+  database records remain available for future planning and RSVP history.
+- Added lifecycle badges, counts, actions, error recovery, a cancelled-event edit
+  notice, and responsive confirmation dialogs across event list and detail views.
+- Passed ESLint, TypeScript, 50 unit tests, and five isolated MongoDB event
+  integration tests covering cancellation, restoration, soft deletion, Member
+  denial, cross-wedding isolation, live-stream persistence, and retained history.
+
 ## Current focus
 
-Review event editing and draft publishing. The next planned Events increment is
-**lifecycle and streaming**: cancellation, soft deletion with retained history,
-and optional validated live-stream links. Start only when explicitly requested.
+Review event lifecycle and streaming. The next planned milestone is **Guests and
+event assignments**: guest records, filtering, editing/removal, and assignment to
+published events. Start only when explicitly requested.
 
 ## Update policy
 
