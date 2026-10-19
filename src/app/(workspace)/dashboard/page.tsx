@@ -10,12 +10,12 @@ import { canManageEvents } from "@/modules/events/constants";
 import { getUpcomingEvents, type EventView } from "@/modules/events/service";
 import { getGuestSummary } from "@/modules/guests/service";
 import { getWeddingMemberSummary } from "@/modules/members/service";
+import { getRsvpDashboardSummary } from "@/modules/rsvp/service";
 import { getWorkspaceForUser } from "@/modules/weddings/service";
 
 export const metadata: Metadata = { title: "Dashboard | Make My Marriage" };
 
 const futureSections = [
-  { label: "RSVP", icon: "check" as const },
   { label: "Tasks & timeline", icon: "clock" as const },
   { label: "Expenses", icon: "payments" as const },
   { label: "Gallery", icon: "gallery" as const },
@@ -29,7 +29,12 @@ export default async function DashboardPage() {
 
   const { wedding, membership } = workspace;
   const eventManager = canManageEvents(membership.role);
-  const [memberSummary, upcomingEvents, guestSummary] = await Promise.all([getWeddingMemberSummary(user.id, wedding.id), getUpcomingEvents(user.id, wedding.id), eventManager ? getGuestSummary(user.id, wedding.id) : Promise.resolve(null)]);
+  const [memberSummary, upcomingEvents, guestSummary, rsvpSummary] = await Promise.all([
+    getWeddingMemberSummary(user.id, wedding.id),
+    getUpcomingEvents(user.id, wedding.id),
+    eventManager ? getGuestSummary(user.id, wedding.id) : Promise.resolve(null),
+    eventManager ? getRsvpDashboardSummary(user.id, wedding.id) : Promise.resolve(null),
+  ]);
   const role = titleCase(membership.role);
   const daysToGo = getDaysToGo(wedding.weddingDate);
   const firstName = user.name.trim().split(/\s+/)[0] || user.name;
@@ -51,6 +56,7 @@ export default async function DashboardPage() {
             <SideLink href="/dashboard" icon="dashboard" active>Overview</SideLink>
             <SideLink href="/events" icon="calendar">Events</SideLink>
             {eventManager && <SideLink href="/guests" icon="users">Guests</SideLink>}
+            {eventManager && <SideLink href="/rsvps" icon="check">RSVP</SideLink>}
             {futureSections.map((item) => <SideLink key={item.label} icon={item.icon}>{item.label}</SideLink>)}
             {membership.role === "ADMIN" && <SideLink href="/members" icon="users">Members</SideLink>}
             {membership.role === "ADMIN" && <SideLink href="/settings/wedding" icon="settings">Wedding settings</SideLink>}
@@ -100,16 +106,19 @@ export default async function DashboardPage() {
             <AttentionCard icon="calendar" label="Ceremony schedule" title={upcomingEvents[0]?.name ?? (eventManager ? "Add your first event" : "No published events yet")} description={upcomingEvents[0] ? `${formatEventDate(upcomingEvents[0])} · ${upcomingEvents[0].venueName}` : "Dates, times, venues, and directions now live in Events & ceremonies."} href={upcomingEvents[0] ? `/events/${upcomingEvents[0].id}` : eventManager ? "/events/new" : "/events"} action={upcomingEvents[0] ? "View next event" : eventManager ? "Create event" : "View schedule"} />
             <AttentionCard icon="users" label="Wedding team" title={`${memberSummary.activeMembers} active member${memberSummary.activeMembers === 1 ? "" : "s"}`} description={pendingCopy} href={membership.role === "ADMIN" ? "/members" : undefined} action="View wedding team" />
             <AttentionCard icon="mail" label="Wedding guestbook" title={guestSummary ? `${guestSummary.activeGuests} active guest${guestSummary.activeGuests === 1 ? "" : "s"}` : "Managed by the planning team"} description={guestSummary ? "Add guests and assign the published ceremonies they are invited to." : "Admins and Managers organise private guest records and ceremony assignments."} href={guestSummary ? "/guests" : undefined} action="Open guestbook" />
-            <AttentionCard icon="check" label="Planning tasks" title="No tasks yet" description="Assignments, due dates, and overdue reminders will appear after task management is available." />
+            {rsvpSummary ? <AttentionCard icon="check" label="RSVP responses" title={`${rsvpSummary.pending} awaiting response`} description={`${rsvpSummary.expectedAttendees} expected attendees across current ceremony assignments.`} href="/rsvps" action="Review responses" /> : <AttentionCard icon="check" label="Planning tasks" title="No tasks yet" description="Assignments, due dates, and overdue reminders will appear after task management is available." />}
           </div>
         </section>
 
-        <section aria-label="Wedding metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section aria-label="Wedding metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <MetricCard icon="users" label="Wedding team" value={String(memberSummary.activeMembers)} detail="Active members" href={membership.role === "ADMIN" ? "/members" : undefined} />
           <MetricCard icon="mail" label="Wedding guests" value={guestSummary ? String(guestSummary.activeGuests) : "—"} detail={guestSummary ? "Active guest records" : "Visible to planners"} href={guestSummary ? "/guests" : undefined} />
+          <MetricCard icon="check" label="RSVP progress" value={rsvpSummary ? `${rsvpSummary.responseRate}%` : "—"} detail={rsvpSummary ? `${rsvpSummary.accepted} accepted · ${rsvpSummary.pending} pending` : "Visible to planners"} href={rsvpSummary ? "/rsvps" : undefined} />
           <MetricCard icon="payments" label="Expenses logged" value="₹0" detail="Finance feature not started" />
           <MetricCard icon="gallery" label="Shared photos" value="0" detail="Gallery feature not started" />
         </section>
+
+        {rsvpSummary && <section className="rounded-xl bg-surface-container-low p-5 shadow-sm sm:p-7" aria-labelledby="dashboard-rsvp-title"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Guest attendance</p><h2 id="dashboard-rsvp-title" className="mt-1 font-serif text-headline-md">RSVP progress</h2><p className="mt-2 text-body-sm text-on-surface-variant">{rsvpSummary.accepted + rsvpSummary.declined} of {rsvpSummary.invitedGuestRecords} assigned guest records have replied.</p></div><Link href="/rsvps" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-body-sm font-semibold text-on-primary">View all responses<WorkspaceIcon name="arrow" /></Link></div><div className="mt-6 h-2.5 overflow-hidden rounded-full bg-surface"><div className="h-full rounded-full bg-secondary" style={{ width: `${rsvpSummary.responseRate}%` }} /></div><div className="mt-5 grid gap-3 sm:grid-cols-4"><Detail label="Accepted">{rsvpSummary.accepted}</Detail><Detail label="Declined">{rsvpSummary.declined}</Detail><Detail label="Awaiting">{rsvpSummary.pending}</Detail><Detail label="Expected attendees">{rsvpSummary.expectedAttendees}</Detail></div>{rsvpSummary.events.length > 0 && <div className="mt-5 grid gap-3 md:grid-cols-3">{rsvpSummary.events.map((event) => <Link key={event.id} href={`/rsvps?eventId=${event.id}`} className="rounded-lg bg-surface-container-lowest p-4 hover:bg-surface"><p className="font-semibold">{event.name}</p><p className="mt-1 text-label-sm text-on-surface-variant">{event.accepted} accepted · {event.pending} awaiting</p></Link>)}</div>}</section>}
 
         <section className="grid gap-6 xl:grid-cols-[1.4fr_0.8fr]">
           <article className="rounded-xl bg-surface-container-low p-5 shadow-sm sm:p-7">
@@ -126,6 +135,7 @@ export default async function DashboardPage() {
               <ProgressItem complete title="Family invitations">Secure member invitations are available.</ProgressItem>
               <ProgressItem complete title="Events and ceremonies">Ceremony scheduling, venues, directions, and publishing are ready.</ProgressItem>
               <ProgressItem complete title="Guestbook foundation">Guest records and ceremony assignments are ready for invitation links.</ProgressItem>
+              <ProgressItem complete title="RSVP collection">Per-event responses and current attendance totals are live.</ProgressItem>
             </ol>
           </article>
         </section>

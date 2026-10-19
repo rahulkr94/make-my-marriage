@@ -67,15 +67,21 @@ export async function updateEvent(userId: string, weddingId: string, eventId: st
       const nextStatus = input.status ?? event.status;
       if (input.status === "CANCELLED" && event.status === "DRAFT") throw new AuthError("INVALID_EVENT_TRANSITION", "Publish this event before cancelling it, or remove the draft instead.", 409);
       if (input.status === "PUBLISHED" && event.status === "CANCELLED") throw new AuthError("INVALID_EVENT_TRANSITION", "Restore this event to draft and review it before publishing again.", 409);
+      const { rsvpClosedAt, ...eventChanges } = input;
       const values = createEventSchema.parse({
         name: event.name, type: event.type, localDate: event.localDate, startLocalTime: event.startLocalTime,
         endLocalTime: event.endLocalTime, endsNextDay: event.endsNextDay, venueName: event.venueName,
         address: event.address, mapUrl: event.mapUrl, liveStreamUrl: event.liveStreamUrl,
         description: event.description,
-        ...input,
+        ...eventChanges,
         status: nextStatus === "CANCELLED" ? "DRAFT" : nextStatus,
       });
-      event.set({ ...values, status: nextStatus, ...resolveEventSchedule(values, wedding.timeZone) });
+      event.set({
+        ...values,
+        status: nextStatus,
+        ...resolveEventSchedule(values, wedding.timeZone),
+        ...(rsvpClosedAt !== undefined ? { rsvpClosedAt: rsvpClosedAt ? new Date(rsvpClosedAt) : null } : {}),
+      });
       await event.save({ session });
       return serializeEvent(event);
     });
@@ -120,6 +126,7 @@ function serializeEvent(event: WeddingEvent & { _id: unknown }) {
     timeZone: event.timeZone, venueName: event.venueName, address: event.address, mapUrl: event.mapUrl,
     liveStreamUrl: event.liveStreamUrl ?? "",
     directionsUrl: getDirectionsUrl(event.address, event.mapUrl), description: event.description, status: event.status,
+    rsvpClosedAt: event.rsvpClosedAt?.toISOString() ?? null,
   };
 }
 export type EventView = ReturnType<typeof serializeEvent>;

@@ -39,6 +39,7 @@ export type CreateEventInput = z.infer<typeof createEventSchema>;
 export const updateEventSchema = z.object({
   ...eventFields,
   status: z.enum(["DRAFT", "PUBLISHED", "CANCELLED"]),
+  rsvpClosedAt: z.union([z.iso.datetime({ offset: true }), z.null()]),
 }).partial().strict().refine((value) => Object.keys(value).length > 0, { message: "Include at least one event detail to update." });
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export const eventListQuerySchema = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1) }).strict();

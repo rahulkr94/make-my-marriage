@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
 **Last updated:** 19 October 2026
-**Current phase:** Personal guest invitations, public ceremony access, email delivery, and QR codes complete; RSVP planned next
+**Current phase:** Per-event RSVP collection, planner reporting, and dashboard metrics complete; tasks and timeline planned next
 **Overall status:** Active development
 
 ## Purpose
@@ -23,7 +23,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Dashboard foundation | Complete | Responsive `/dashboard` shell uses live wedding and member data, clearly labels unavailable modules, and provides the permanent signed-in workspace destination. |
 | Events | Lifecycle complete | Responsive listing, create/edit/details flows, venues, time-zone-aware schedules, directions, draft publishing, cancellation/restoration, soft deletion, optional live-stream links, role-based visibility, and dashboard integration. Guest assignments continue in the Guests milestone. |
 | Guests and invitations | Complete | Responsive guest records, event assignments, high-entropy private links, email/manual delivery, public assigned-event invitations, revocation, regeneration, and downloadable QR codes are complete. |
-| RSVP and dashboard metrics | Not started | Per-event responses, attendee counts, and live RSVP summaries within the dashboard. |
+| RSVP and dashboard metrics | Complete | Per-event Yes/No responses, attendee counts, close/reopen controls, planner summaries, confirmation emails, and live dashboard metrics. |
 | Tasks | Not started | Assignments, status updates, due dates, and wedding timeline. |
 | Finances | Not started | Expenses, vendors, bills, and private attachments. |
 | Gallery | Not started | Photo uploads, moderation, and shareable gallery access. |
@@ -327,12 +327,38 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   screens plus the unavailable public state in the live local browser without
   changing user data.
 
+### RSVP collection and reporting (19 October 2026)
+
+- Applied the finalized Stitch direction to the private invitation RSVP cards,
+  the responsive `/rsvps` planner workspace, and the dashboard attendance
+  summary. Guests can accept or decline each assigned ceremony separately,
+  choose a bounded attendee count, see their saved response, and update it while
+  that ceremony remains open.
+- Added token-scoped public RSVP writes that revalidate the active invitation,
+  guest, published event, current assignment, and RSVP window on every request.
+  Responses use a unique event/guest record, retain historical data after an
+  assignment is removed, and never contribute removed assignments to current
+  planner totals.
+- Added Admin and Manager reporting with ceremony, response, side, and guest
+  filters; invited-record, accepted, declined, pending, expected-attendee, and
+  response-rate totals; delivery context; responsive desktop tables and mobile
+  cards; and per-event close/reopen confirmation flows. Regular Members cannot
+  access guest response reports.
+- Added live dashboard RSVP progress and expected attendance. RSVP confirmation
+  email is attempted through Resend when a guest address and delivery settings
+  are available; delivery failure does not roll back the saved response.
+- Added the `rsvps` collection and controlled indexes, documented the configurable
+  attendee limit, and synchronized indexes in the configured development
+  database. Passed ESLint, TypeScript, 68 unit tests, ten relevant isolated
+  MongoDB integration tests, and the production build. Reviewed planner desktop,
+  confirmation, dashboard, and public desktop/mobile states in the local browser
+  without changing live RSVP data.
+
 ## Current focus
 
-Review guest invitation generation and the public assigned-event experience.
-The next planned increment is **RSVP collection**: per-event Yes/No responses,
-attendee counts, response closing, planner summaries, and live dashboard metrics.
-Start only when explicitly requested.
+The next planned increment is **Tasks and timeline**: planner-created work items,
+assignees, due dates, status changes, ceremony context, and dashboard attention
+states. Start only when explicitly requested.
 
 ## Update policy
 

@@ -18,6 +18,7 @@ const eventSchema = new Schema({
   liveStreamUrl: { type: String, default: "", maxlength: 2048 },
   description: { type: String, default: "", maxlength: 2000 },
   status: { type: String, enum: ["DRAFT", "PUBLISHED", "CANCELLED"], required: true },
+  rsvpClosedAt: { type: Date, default: null },
   deletedAt: { type: Date, default: null },
 }, { timestamps: true, strict: "throw" });
 eventSchema.index({ weddingId: 1, deletedAt: 1, startsAtUtc: 1, _id: 1 }, { name: "wedding_event_schedule" });

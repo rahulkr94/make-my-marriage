@@ -12,6 +12,8 @@ import { createGuestInvitationUrl, sendGuestInvitationEmail } from "./email";
 import { GuestInvitationModel, type GuestInvitation } from "./models";
 import { createInvitationQrDataUrl } from "./qr";
 import type { GuestInvitationListQuery } from "./schemas";
+import { getRsvpMaxAttendees } from "@/modules/rsvp/constants";
+import { RsvpModel } from "@/modules/rsvp/models";
 
 type InvitationActor = { id: string; name: string; email: string };
 type InvitationRecord = GuestInvitation & { _id: unknown; createdAt: Date; updatedAt: Date };
@@ -183,6 +185,10 @@ export async function getPublicGuestInvitation(rawToken: string) {
   const events = assignments.length
     ? await EventModel.find({ _id: { $in: assignments.map((assignment) => assignment.eventId) }, weddingId: invitation.weddingId, status: "PUBLISHED", deletedAt: null }).sort({ startsAtUtc: 1, _id: 1 }).lean()
     : [];
+  const responses = events.length
+    ? await RsvpModel.find({ weddingId: invitation.weddingId, guestId: guest._id, eventId: { $in: events.map((event) => event._id) } }).lean()
+    : [];
+  const responseMap = new Map(responses.map((response) => [String(response.eventId), response]));
   return {
     guest: { name: guest.name },
     wedding: {
@@ -190,12 +196,19 @@ export async function getPublicGuestInvitation(rawToken: string) {
       mainVenueName: wedding.mainVenueName, mainAddress: wedding.mainAddress, description: wedding.description ?? "",
     },
     invitation: { expiresAt: invitation.expiresAt.toISOString(), tokenVersion: invitation.tokenVersion },
+    rsvpMaxAttendees: getRsvpMaxAttendees(),
     events: events.map((event) => ({
       id: String(event._id), name: event.name, type: event.type, localDate: event.localDate,
       startLocalTime: event.startLocalTime, endLocalTime: event.endLocalTime, endsNextDay: event.endsNextDay,
       timeZone: event.timeZone, venueName: event.venueName, address: event.address,
       directionsUrl: getDirectionsUrl(event.address, event.mapUrl), liveStreamUrl: event.liveStreamUrl ?? "",
-      description: event.description ?? "",
+      description: event.description ?? "", rsvpClosedAt: event.rsvpClosedAt?.toISOString() ?? null,
+      rsvpClosed: Boolean(event.rsvpClosedAt && event.rsvpClosedAt <= now),
+      rsvp: responseMap.has(String(event._id)) ? {
+        response: responseMap.get(String(event._id))!.response,
+        attendeeCount: responseMap.get(String(event._id))!.attendeeCount,
+        respondedAt: responseMap.get(String(event._id))!.respondedAt.toISOString(),
+      } : null,
     })),
   };
 }
