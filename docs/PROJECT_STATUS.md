@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 19 October 2026
-**Current phase:** Per-event RSVP collection, planner reporting, and dashboard metrics complete; tasks and timeline planned next
+**Last updated:** 25 October 2026
+**Current phase:** Expense ledger and payment tracking complete; vendors and private finance attachments planned next
 **Overall status:** Active development
 
 ## Purpose
@@ -24,8 +24,8 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Events | Lifecycle complete | Responsive listing, create/edit/details flows, venues, time-zone-aware schedules, directions, draft publishing, cancellation/restoration, soft deletion, optional live-stream links, role-based visibility, and dashboard integration. Guest assignments continue in the Guests milestone. |
 | Guests and invitations | Complete | Responsive guest records, event assignments, high-entropy private links, email/manual delivery, public assigned-event invitations, revocation, regeneration, and downloadable QR codes are complete. |
 | RSVP and dashboard metrics | Complete | Per-event Yes/No responses, attendee counts, close/reopen controls, planner summaries, confirmation emails, and live dashboard metrics. |
-| Tasks | Not started | Assignments, status updates, due dates, and wedding timeline. |
-| Finances | Not started | Expenses, vendors, bills, and private attachments. |
+| Tasks | Complete | Planner-created work items, same-wedding assignees and ceremony context, due dates, priorities, role-scoped status updates, dashboard attention states, and the combined wedding timeline. |
+| Finances | Expenses complete | Actual expenses, payment history, balances, category/event totals, planner-only access, and dashboard metrics are complete. Vendors, bills, and private attachments remain. |
 | Gallery | Not started | Photo uploads, moderation, and shareable gallery access. |
 | Reminders and launch | Not started | Scheduled emails, final accessibility checks, and production setup. |
 
@@ -354,11 +354,64 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   confirmation, dashboard, and public desktop/mobile states in the local browser
   without changing live RSVP data.
 
+### Tasks and wedding timeline (22 October 2026)
+
+- Applied the finalized Stitch desktop and mobile direction to a responsive
+  `/tasks` workspace with task and timeline views, summary cards, progress,
+  search and filters, grouped deadline states, task details, and focused create
+  and edit dialogs. The combined timeline orders ceremony starts and task due
+  dates in the wedding time zone.
+- Added wedding-scoped task list, create, detail, update, and soft-removal APIs;
+  strict validation; bounded pagination; same-origin and rate-limit protection;
+  same-wedding event and active-assignee checks; and controlled task indexes.
+  Due dates entered in wedding-local time are stored as UTC instants.
+- Enforced the task permission model in the service layer. Admins and Managers
+  can manage all wedding tasks, while Members receive only tasks assigned to
+  their membership row and may update only status. Historical assignee labels
+  remain readable if membership later changes.
+- Added best-effort Resend assignment email when a task is newly assigned or
+  reassigned. Delivery configuration or provider failure does not roll back the
+  task. Scheduled task reminders remain part of the Reminders milestone.
+- Replaced dashboard task placeholders with live completion, active, and overdue
+  values; enabled permanent task navigation and the Add task action; and added
+  the completed Tasks and timeline foundation step.
+- Passed ESLint, TypeScript, 72 non-database tests, four isolated MongoDB task
+  integration tests, the production build, and development index synchronization.
+  Reviewed desktop list, creation, combined timeline, dashboard metrics, and a
+  390-pixel mobile layout in the signed-in local app with no overflow or fresh
+  browser errors, then removed the temporary verification record.
+
+### Expense ledger and payment tracking (25 October 2026)
+
+- Applied the finalized Stitch desktop and mobile direction to a responsive
+  `/expenses` workspace with actual-expense, paid, outstanding, and record
+  totals; payment progress; category breakdowns; search and filters; desktop
+  table and mobile card layouts; and empty, detail, create, edit, payment, and
+  deletion states.
+- Added wedding-scoped expense list, create, detail, update, payment, and soft
+  deletion APIs with strict paise-string validation, Indian currency display,
+  same-wedding ceremony checks, bounded pagination, same-origin protection,
+  action rate limits, derived balances and payment status, and controlled
+  expense indexes. Payment history records date, payer, method, reference, and
+  note without using floating-point money.
+- Enforced Admin and Manager finance access in the service layer. Regular
+  Members do not see finance navigation or dashboard values and receive a
+  forbidden response if they directly query finance APIs.
+- Replaced dashboard finance placeholders with live totals for authorized
+  planners, added permanent expense navigation and an Add expense action, and
+  recorded the expense ledger in workspace progress. The implementation keeps
+  V1 focused on actual expenses and does not create an unsupported wedding
+  budget model.
+- Passed ESLint, TypeScript, 76 non-database tests, three isolated MongoDB
+  expense integration tests, the production build, and development index
+  synchronization. Reviewed create, detail, payment, dashboard, empty, desktop,
+  and 390-pixel mobile states in the signed-in local app with no horizontal
+  overflow, then removed the temporary verification record.
+
 ## Current focus
 
-The next planned increment is **Tasks and timeline**: planner-created work items,
-assignees, due dates, status changes, ceremony context, and dashboard attention
-states. Start only when explicitly requested.
+The next planned Finances increment is **Vendors**, followed by private bill,
+receipt, and contract attachments. Start only when explicitly requested.
 
 ## Update policy
 

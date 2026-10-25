@@ -9,15 +9,16 @@ import { getCurrentUser } from "@/modules/auth/session";
 import { canManageEvents } from "@/modules/events/constants";
 import { getUpcomingEvents, type EventView } from "@/modules/events/service";
 import { getGuestSummary } from "@/modules/guests/service";
+import { canManageFinances } from "@/modules/finance/constants";
+import { getExpenseDashboardSummary } from "@/modules/finance/service";
 import { getWeddingMemberSummary } from "@/modules/members/service";
 import { getRsvpDashboardSummary } from "@/modules/rsvp/service";
+import { getTaskDashboardSummary } from "@/modules/tasks/service";
 import { getWorkspaceForUser } from "@/modules/weddings/service";
 
 export const metadata: Metadata = { title: "Dashboard | Make My Marriage" };
 
 const futureSections = [
-  { label: "Tasks & timeline", icon: "clock" as const },
-  { label: "Expenses", icon: "payments" as const },
   { label: "Gallery", icon: "gallery" as const },
 ];
 
@@ -29,11 +30,14 @@ export default async function DashboardPage() {
 
   const { wedding, membership } = workspace;
   const eventManager = canManageEvents(membership.role);
-  const [memberSummary, upcomingEvents, guestSummary, rsvpSummary] = await Promise.all([
+  const financeManager = canManageFinances(membership.role);
+  const [memberSummary, upcomingEvents, guestSummary, rsvpSummary, taskSummary, expenseSummary] = await Promise.all([
     getWeddingMemberSummary(user.id, wedding.id),
     getUpcomingEvents(user.id, wedding.id),
     eventManager ? getGuestSummary(user.id, wedding.id) : Promise.resolve(null),
     eventManager ? getRsvpDashboardSummary(user.id, wedding.id) : Promise.resolve(null),
+    getTaskDashboardSummary(user.id, wedding.id),
+    financeManager ? getExpenseDashboardSummary(user.id, wedding.id) : Promise.resolve(null),
   ]);
   const role = titleCase(membership.role);
   const daysToGo = getDaysToGo(wedding.weddingDate);
@@ -57,6 +61,8 @@ export default async function DashboardPage() {
             <SideLink href="/events" icon="calendar">Events</SideLink>
             {eventManager && <SideLink href="/guests" icon="users">Guests</SideLink>}
             {eventManager && <SideLink href="/rsvps" icon="check">RSVP</SideLink>}
+            <SideLink href="/tasks" icon="clock">Tasks &amp; timeline</SideLink>
+            {financeManager && <SideLink href="/expenses" icon="payments">Expenses</SideLink>}
             {futureSections.map((item) => <SideLink key={item.label} icon={item.icon}>{item.label}</SideLink>)}
             {membership.role === "ADMIN" && <SideLink href="/members" icon="users">Members</SideLink>}
             {membership.role === "ADMIN" && <SideLink href="/settings/wedding" icon="settings">Wedding settings</SideLink>}
@@ -96,25 +102,27 @@ export default async function DashboardPage() {
             {membership.role === "ADMIN" && <DashboardAction href="/members" icon="userPlus">Invite family</DashboardAction>}
             {eventManager && <DashboardAction href="/events/new" icon="calendar">Add event</DashboardAction>}
             {eventManager && <DashboardAction href="/guests/new" icon="userPlus">Add guest</DashboardAction>}
-            <DashboardAction icon="check">Add task</DashboardAction>
+            {eventManager && <DashboardAction href="/tasks?create=1" icon="check">Add task</DashboardAction>}
+            {financeManager && <DashboardAction href="/expenses?create=1" icon="payments">Add expense</DashboardAction>}
           </div>
         </section>
 
         <section aria-labelledby="attention-title">
-          <div className="flex flex-wrap items-end justify-between gap-2"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Planning pulse</p><h2 id="attention-title" className="mt-1 font-serif text-headline-sm">What needs attention</h2></div><span className="text-body-sm text-on-surface-variant">Events and guest records are ready to organise</span></div>
+          <div className="flex flex-wrap items-end justify-between gap-2"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Planning pulse</p><h2 id="attention-title" className="mt-1 font-serif text-headline-sm">What needs attention</h2></div><span className="text-body-sm text-on-surface-variant">Live ceremony, guest, RSVP, and task priorities</span></div>
           <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <AttentionCard icon="calendar" label="Ceremony schedule" title={upcomingEvents[0]?.name ?? (eventManager ? "Add your first event" : "No published events yet")} description={upcomingEvents[0] ? `${formatEventDate(upcomingEvents[0])} · ${upcomingEvents[0].venueName}` : "Dates, times, venues, and directions now live in Events & ceremonies."} href={upcomingEvents[0] ? `/events/${upcomingEvents[0].id}` : eventManager ? "/events/new" : "/events"} action={upcomingEvents[0] ? "View next event" : eventManager ? "Create event" : "View schedule"} />
-            <AttentionCard icon="users" label="Wedding team" title={`${memberSummary.activeMembers} active member${memberSummary.activeMembers === 1 ? "" : "s"}`} description={pendingCopy} href={membership.role === "ADMIN" ? "/members" : undefined} action="View wedding team" />
+            <AttentionCard icon="clock" label="Planning tasks" title={taskSummary.overdue ? `${taskSummary.overdue} overdue task${taskSummary.overdue === 1 ? "" : "s"}` : `${taskSummary.open + taskSummary.inProgress} active task${taskSummary.open + taskSummary.inProgress === 1 ? "" : "s"}`} description={taskSummary.overdue ? "These deadlines need attention from the wedding team." : `${taskSummary.completionRate}% of active wedding tasks completed.`} href="/tasks" action="Open task plan" />
             <AttentionCard icon="mail" label="Wedding guestbook" title={guestSummary ? `${guestSummary.activeGuests} active guest${guestSummary.activeGuests === 1 ? "" : "s"}` : "Managed by the planning team"} description={guestSummary ? "Add guests and assign the published ceremonies they are invited to." : "Admins and Managers organise private guest records and ceremony assignments."} href={guestSummary ? "/guests" : undefined} action="Open guestbook" />
-            {rsvpSummary ? <AttentionCard icon="check" label="RSVP responses" title={`${rsvpSummary.pending} awaiting response`} description={`${rsvpSummary.expectedAttendees} expected attendees across current ceremony assignments.`} href="/rsvps" action="Review responses" /> : <AttentionCard icon="check" label="Planning tasks" title="No tasks yet" description="Assignments, due dates, and overdue reminders will appear after task management is available." />}
+            {rsvpSummary ? <AttentionCard icon="check" label="RSVP responses" title={`${rsvpSummary.pending} awaiting response`} description={`${rsvpSummary.expectedAttendees} expected attendees across current ceremony assignments.`} href="/rsvps" action="Review responses" /> : <AttentionCard icon="users" label="Wedding team" title={`${memberSummary.activeMembers} active member${memberSummary.activeMembers === 1 ? "" : "s"}`} description={pendingCopy} href={membership.role === "ADMIN" ? "/members" : undefined} action="View wedding team" />}
           </div>
         </section>
 
-        <section aria-label="Wedding metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section aria-label="Wedding metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <MetricCard icon="users" label="Wedding team" value={String(memberSummary.activeMembers)} detail="Active members" href={membership.role === "ADMIN" ? "/members" : undefined} />
           <MetricCard icon="mail" label="Wedding guests" value={guestSummary ? String(guestSummary.activeGuests) : "—"} detail={guestSummary ? "Active guest records" : "Visible to planners"} href={guestSummary ? "/guests" : undefined} />
           <MetricCard icon="check" label="RSVP progress" value={rsvpSummary ? `${rsvpSummary.responseRate}%` : "—"} detail={rsvpSummary ? `${rsvpSummary.accepted} accepted · ${rsvpSummary.pending} pending` : "Visible to planners"} href={rsvpSummary ? "/rsvps" : undefined} />
-          <MetricCard icon="payments" label="Expenses logged" value="₹0" detail="Finance feature not started" />
+          <MetricCard icon="clock" label="Task progress" value={`${taskSummary.completionRate}%`} detail={`${taskSummary.overdue} overdue · ${taskSummary.open + taskSummary.inProgress} active`} href="/tasks" />
+          <MetricCard icon="payments" label="Expenses logged" value={expenseSummary ? formatMoney(expenseSummary.totalMinor) : "—"} detail={expenseSummary ? `${formatMoney(expenseSummary.outstandingMinor)} outstanding` : "Visible to planners"} href={expenseSummary ? "/expenses" : undefined} />
           <MetricCard icon="gallery" label="Shared photos" value="0" detail="Gallery feature not started" />
         </section>
 
@@ -136,6 +144,8 @@ export default async function DashboardPage() {
               <ProgressItem complete title="Events and ceremonies">Ceremony scheduling, venues, directions, and publishing are ready.</ProgressItem>
               <ProgressItem complete title="Guestbook foundation">Guest records and ceremony assignments are ready for invitation links.</ProgressItem>
               <ProgressItem complete title="RSVP collection">Per-event responses and current attendance totals are live.</ProgressItem>
+              <ProgressItem complete title="Tasks and timeline">Assignments, deadlines, status tracking, and the combined wedding timeline are ready.</ProgressItem>
+              {financeManager && <ProgressItem complete title="Expense ledger">Actual costs, payment history, balances, and ceremony totals are ready.</ProgressItem>}
             </ol>
           </article>
         </section>
@@ -215,4 +225,11 @@ function getDaysToGo(value: string) {
 
 function titleCase(value: string) {
   return value.charAt(0) + value.slice(1).toLowerCase();
+}
+
+function formatMoney(value: string) {
+  const minor = BigInt(value);
+  const whole = minor / BigInt(100);
+  const fraction = String(minor % BigInt(100)).padStart(2, "0");
+  return `₹${new Intl.NumberFormat("en-IN").format(whole)}${fraction === "00" ? "" : `.${fraction}`}`;
 }
