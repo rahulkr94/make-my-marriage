@@ -40,7 +40,7 @@ describe.skipIf(process.env.MMM_RUN_DB_TESTS !== "1")("wedding expenses with Mon
   }
 
   function input(eventId: string) {
-    return { title: "Royal Orchid Palace", amountMinor: "60000000", category: "VENUE" as const, eventId, expenseDate: "2027-01-10", dueDate: "2027-01-15", paidBy: "Joint wedding fund", vendorName: "Royal Orchid Heritage Ltd.", notes: "Mandap and courtyard", initialPaidAmountMinor: "30000000", initialPaymentMethod: "BANK_TRANSFER" as const, initialPaymentReference: "HDFC990142" };
+    return { title: "Royal Orchid Palace", amountMinor: "60000000", category: "VENUE" as const, eventId, expenseDate: "2027-01-10", dueDate: "2027-01-15", paidBy: "Joint wedding fund", vendorId: null, vendorName: "Royal Orchid Heritage Ltd.", notes: "Mandap and courtyard", initialPaidAmountMinor: "30000000", initialPaymentMethod: "BANK_TRANSFER" as const, initialPaymentReference: "HDFC990142" };
   }
 
   it("lets planners record actual expenses while hiding finances from Members", async () => {

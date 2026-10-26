@@ -13,6 +13,9 @@ export type CreateMemberInvitationInput = z.infer<typeof createMemberInvitationS
 
 export const updateMemberRoleSchema = z.object({
   role: z.enum(["ADMIN", "MANAGER", "MEMBER"], { message: "Choose Admin, Manager, or Member." }),
-}).strict();
+  grants: z.array(z.enum(["CAN_MODERATE_GALLERY"])).max(1).optional(),
+}).strict().superRefine((value, context) => {
+  if (value.role !== "MANAGER" && value.grants?.length) context.addIssue({ code: "custom", path: ["grants"], message: "Only Managers can receive gallery moderation access." });
+});
 
 export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;

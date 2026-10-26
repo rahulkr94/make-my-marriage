@@ -11,16 +11,13 @@ import { getUpcomingEvents, type EventView } from "@/modules/events/service";
 import { getGuestSummary } from "@/modules/guests/service";
 import { canManageFinances } from "@/modules/finance/constants";
 import { getExpenseDashboardSummary } from "@/modules/finance/service";
+import { getGalleryDashboardSummary } from "@/modules/gallery/service";
 import { getWeddingMemberSummary } from "@/modules/members/service";
 import { getRsvpDashboardSummary } from "@/modules/rsvp/service";
 import { getTaskDashboardSummary } from "@/modules/tasks/service";
 import { getWorkspaceForUser } from "@/modules/weddings/service";
 
 export const metadata: Metadata = { title: "Dashboard | Make My Marriage" };
-
-const futureSections = [
-  { label: "Gallery", icon: "gallery" as const },
-];
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -31,13 +28,14 @@ export default async function DashboardPage() {
   const { wedding, membership } = workspace;
   const eventManager = canManageEvents(membership.role);
   const financeManager = canManageFinances(membership.role);
-  const [memberSummary, upcomingEvents, guestSummary, rsvpSummary, taskSummary, expenseSummary] = await Promise.all([
+  const [memberSummary, upcomingEvents, guestSummary, rsvpSummary, taskSummary, expenseSummary, gallerySummary] = await Promise.all([
     getWeddingMemberSummary(user.id, wedding.id),
     getUpcomingEvents(user.id, wedding.id),
     eventManager ? getGuestSummary(user.id, wedding.id) : Promise.resolve(null),
     eventManager ? getRsvpDashboardSummary(user.id, wedding.id) : Promise.resolve(null),
     getTaskDashboardSummary(user.id, wedding.id),
     financeManager ? getExpenseDashboardSummary(user.id, wedding.id) : Promise.resolve(null),
+    getGalleryDashboardSummary(user.id, wedding.id),
   ]);
   const role = titleCase(membership.role);
   const daysToGo = getDaysToGo(wedding.weddingDate);
@@ -63,7 +61,8 @@ export default async function DashboardPage() {
             {eventManager && <SideLink href="/rsvps" icon="check">RSVP</SideLink>}
             <SideLink href="/tasks" icon="clock">Tasks &amp; timeline</SideLink>
             {financeManager && <SideLink href="/expenses" icon="payments">Expenses</SideLink>}
-            {futureSections.map((item) => <SideLink key={item.label} icon={item.icon}>{item.label}</SideLink>)}
+            {financeManager && <SideLink href="/vendors" icon="users">Vendors</SideLink>}
+            <SideLink href="/gallery" icon="gallery">Gallery</SideLink>
             {membership.role === "ADMIN" && <SideLink href="/members" icon="users">Members</SideLink>}
             {membership.role === "ADMIN" && <SideLink href="/settings/wedding" icon="settings">Wedding settings</SideLink>}
           </nav>
@@ -123,7 +122,7 @@ export default async function DashboardPage() {
           <MetricCard icon="check" label="RSVP progress" value={rsvpSummary ? `${rsvpSummary.responseRate}%` : "—"} detail={rsvpSummary ? `${rsvpSummary.accepted} accepted · ${rsvpSummary.pending} pending` : "Visible to planners"} href={rsvpSummary ? "/rsvps" : undefined} />
           <MetricCard icon="clock" label="Task progress" value={`${taskSummary.completionRate}%`} detail={`${taskSummary.overdue} overdue · ${taskSummary.open + taskSummary.inProgress} active`} href="/tasks" />
           <MetricCard icon="payments" label="Expenses logged" value={expenseSummary ? formatMoney(expenseSummary.totalMinor) : "—"} detail={expenseSummary ? `${formatMoney(expenseSummary.outstandingMinor)} outstanding` : "Visible to planners"} href={expenseSummary ? "/expenses" : undefined} />
-          <MetricCard icon="gallery" label="Shared photos" value="0" detail="Gallery feature not started" />
+          <MetricCard icon="gallery" label="Shared photos" value={String(gallerySummary.approved)} detail={gallerySummary.pending === null ? "Approved gallery moments" : `${gallerySummary.pending} awaiting review`} href="/gallery" />
         </section>
 
         {rsvpSummary && <section className="rounded-xl bg-surface-container-low p-5 shadow-sm sm:p-7" aria-labelledby="dashboard-rsvp-title"><div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end"><div><p className="text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Guest attendance</p><h2 id="dashboard-rsvp-title" className="mt-1 font-serif text-headline-md">RSVP progress</h2><p className="mt-2 text-body-sm text-on-surface-variant">{rsvpSummary.accepted + rsvpSummary.declined} of {rsvpSummary.invitedGuestRecords} assigned guest records have replied.</p></div><Link href="/rsvps" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-4 py-2.5 text-body-sm font-semibold text-on-primary">View all responses<WorkspaceIcon name="arrow" /></Link></div><div className="mt-6 h-2.5 overflow-hidden rounded-full bg-surface"><div className="h-full rounded-full bg-secondary" style={{ width: `${rsvpSummary.responseRate}%` }} /></div><div className="mt-5 grid gap-3 sm:grid-cols-4"><Detail label="Accepted">{rsvpSummary.accepted}</Detail><Detail label="Declined">{rsvpSummary.declined}</Detail><Detail label="Awaiting">{rsvpSummary.pending}</Detail><Detail label="Expected attendees">{rsvpSummary.expectedAttendees}</Detail></div>{rsvpSummary.events.length > 0 && <div className="mt-5 grid gap-3 md:grid-cols-3">{rsvpSummary.events.map((event) => <Link key={event.id} href={`/rsvps?eventId=${event.id}`} className="rounded-lg bg-surface-container-lowest p-4 hover:bg-surface"><p className="font-semibold">{event.name}</p><p className="mt-1 text-label-sm text-on-surface-variant">{event.accepted} accepted · {event.pending} awaiting</p></Link>)}</div>}</section>}
@@ -146,6 +145,8 @@ export default async function DashboardPage() {
               <ProgressItem complete title="RSVP collection">Per-event responses and current attendance totals are live.</ProgressItem>
               <ProgressItem complete title="Tasks and timeline">Assignments, deadlines, status tracking, and the combined wedding timeline are ready.</ProgressItem>
               {financeManager && <ProgressItem complete title="Expense ledger">Actual costs, payment history, balances, and ceremony totals are ready.</ProgressItem>}
+              {financeManager && <ProgressItem complete title="Vendor directory">Contacts, ceremony assignments, quotes, payments, and linked expenses are ready.</ProgressItem>}
+              <ProgressItem complete title="Wedding gallery">Private uploads, moderation, guest contributions, and approved sharing are ready.</ProgressItem>
             </ol>
           </article>
         </section>

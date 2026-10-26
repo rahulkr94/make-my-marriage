@@ -5,6 +5,7 @@ import { CreateExpenseButton, ExpenseWorkspace } from "@/components/finance/expe
 import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { getCurrentUser } from "@/modules/auth/session";
+import { listDocuments } from "@/modules/documents/service";
 import { canManageFinances, EXPENSE_CATEGORY_LABELS, EXPENSE_PAYMENT_STATUS_LABELS } from "@/modules/finance/constants";
 import { expenseListQuerySchema } from "@/modules/finance/schemas";
 import { getExpense, listExpenses } from "@/modules/finance/service";
@@ -30,10 +31,14 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
   const query = parsed.success ? parsed.data : expenseListQuerySchema.parse({});
   const requestedExpenseId = first(raw.expenseId);
   const openCreate = first(raw.create) === "1";
+  const initialVendorId = openCreate ? first(raw.vendorId) ?? null : null;
   const [data, selectedExpense] = await Promise.all([
     listExpenses(user.id, workspace.wedding.id, query),
     requestedExpenseId ? getExpense(user.id, workspace.wedding.id, requestedExpenseId) : Promise.resolve(null),
   ]);
+  const attachments = selectedExpense ? await listDocuments(user.id, workspace.wedding.id, {
+    associationType: "EXPENSE", associationId: selectedExpense.id, q: "",
+  }) : { documents: [], total: 0 };
   const pages = Math.max(1, Math.ceil(data.total / data.pageSize));
   const maxCategory = data.summary.categoryTotals.reduce((max, item) => Math.max(max, Number(item.amountMinor)), 1);
 
@@ -58,7 +63,7 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
 
       <form action="/expenses" method="get" className="mt-7 rounded-xl bg-surface-container-low p-4 shadow-sm"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><label className="relative sm:col-span-2 xl:col-span-1"><span className="sr-only">Search expenses</span><WorkspaceIcon name="search" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" /><input name="q" defaultValue={query.q} placeholder="Search expenses, vendors, notes" className="w-full rounded-lg border border-transparent bg-surface px-10 py-3 text-body-sm outline-none focus:border-primary" /></label><Select name="paymentStatus" label="All payment statuses" value={query.paymentStatus ?? ""} options={Object.entries(EXPENSE_PAYMENT_STATUS_LABELS).map(([value, label]) => ({ value, label }))} /><Select name="category" label="All categories" value={query.category ?? ""} options={Object.entries(EXPENSE_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))} /><Select name="eventId" label="All ceremonies" value={query.eventId ?? ""} options={data.eventOptions.map((event) => ({ value: event.id, label: event.name }))} /><label><span className="sr-only">From date</span><input type="date" name="dateFrom" defaultValue={query.dateFrom ?? ""} className={inputClass} /></label><label><span className="sr-only">To date</span><input type="date" name="dateTo" defaultValue={query.dateTo ?? ""} className={inputClass} /></label><button className="rounded-lg bg-primary px-5 py-3 text-body-sm font-semibold text-on-primary xl:col-span-2">Apply filters</button></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-label-sm text-on-surface-variant"><span>{data.total} matching expense{data.total === 1 ? "" : "s"}</span>{Object.keys(values).length > 0 && <Link href="/expenses" className="font-semibold text-primary hover:underline">Clear filters</Link>}</div></form>
 
-      <ExpenseWorkspace key={selectedExpense?.id ?? `${data.total}-${openCreate ? "create" : "list"}`} weddingId={workspace.wedding.id} data={data} selectedExpense={selectedExpense} openCreate={openCreate} />
+      <ExpenseWorkspace key={selectedExpense?.id ?? `${data.total}-${openCreate ? "create" : "list"}`} weddingId={workspace.wedding.id} data={data} selectedExpense={selectedExpense} attachments={attachments.documents} openCreate={openCreate} initialVendorId={initialVendorId} />
       {pages > 1 && <nav aria-label="Expense pages" className="mt-8 flex items-center justify-between"><PageLink raw={raw} page={query.page - 1} disabled={query.page === 1}>Previous</PageLink><span className="text-body-sm text-on-surface-variant">Page {query.page} of {pages}</span><PageLink raw={raw} page={query.page + 1} disabled={query.page === pages}>Next</PageLink></nav>}
     </main>
   </WorkspaceShell>;

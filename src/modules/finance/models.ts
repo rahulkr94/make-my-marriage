@@ -1,5 +1,5 @@
 import { Schema, model, models, type InferSchemaType, type Model } from "mongoose";
-import { EXPENSE_CATEGORIES, EXPENSE_PAYMENT_STATUSES, PAYMENT_METHODS } from "./constants";
+import { EXPENSE_CATEGORIES, EXPENSE_PAYMENT_STATUSES, PAYMENT_METHODS, VENDOR_CATEGORIES } from "./constants";
 
 const paymentSchema = new Schema({
   amountMinor: { type: BigInt, required: true },
@@ -38,3 +38,28 @@ expenseSchema.index({ weddingId: 1, deletedAt: 1, paymentStatus: 1, category: 1 
 export type WeddingExpense = InferSchemaType<typeof expenseSchema>;
 export const ExpenseModel = (models.WeddingExpense as Model<WeddingExpense> | undefined)
   ?? model<WeddingExpense>("WeddingExpense", expenseSchema, "expenses");
+
+const vendorSchema = new Schema({
+  weddingId: { type: Schema.Types.ObjectId, required: true },
+  name: { type: String, required: true, trim: true, maxlength: 160 },
+  category: { type: String, enum: VENDOR_CATEGORIES, required: true },
+  contactName: { type: String, default: "", trim: true, maxlength: 120 },
+  email: { type: String, default: "", trim: true, maxlength: 254 },
+  phone: { type: String, default: "", trim: true, maxlength: 40 },
+  address: { type: String, default: "", trim: true, maxlength: 500 },
+  eventIds: { type: [Schema.Types.ObjectId], default: [] },
+  quotedAmountMinor: { type: BigInt, default: null },
+  paidAmountMinor: { type: BigInt, required: true, default: () => BigInt(0) },
+  currency: { type: String, enum: ["INR"], required: true, default: "INR" },
+  notes: { type: String, default: "", trim: true, maxlength: 3000 },
+  createdBy: { type: Schema.Types.ObjectId, required: true },
+  deletedAt: { type: Date, default: null },
+}, { timestamps: true, strict: "throw" });
+
+vendorSchema.index({ weddingId: 1, deletedAt: 1, name: 1, _id: 1 }, { name: "wedding_vendor_directory" });
+vendorSchema.index({ weddingId: 1, deletedAt: 1, category: 1, name: 1 }, { name: "wedding_vendor_filters" });
+vendorSchema.index({ weddingId: 1, eventIds: 1, deletedAt: 1 }, { name: "wedding_event_vendors" });
+
+export type WeddingVendor = InferSchemaType<typeof vendorSchema>;
+export const VendorModel = (models.WeddingVendor as Model<WeddingVendor> | undefined)
+  ?? model<WeddingVendor>("WeddingVendor", vendorSchema, "vendors");

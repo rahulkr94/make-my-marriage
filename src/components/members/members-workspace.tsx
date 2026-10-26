@@ -10,7 +10,7 @@ import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
 
 type Role = "ADMIN" | "MANAGER" | "MEMBER";
 type InvitationRole = "ADMIN" | "MANAGER" | "MEMBER";
-type Member = { id: string; userId: string; name: string; email: string; role: Role; joinedAt: string };
+type Member = { id: string; userId: string; name: string; email: string; role: Role; grants: Array<"CAN_MODERATE_GALLERY">; joinedAt: string };
 type Invitation = {
   id: string;
   email: string;
@@ -211,6 +211,21 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
     }
   }
 
+  async function toggleGalleryModeration(member: Member) {
+    if (pendingAction) return;
+    const enabled = member.grants.includes("CAN_MODERATE_GALLERY");
+    setPendingAction(`gallery:${member.id}`);
+    try {
+      const response = await fetch(`/api/v1/weddings/${wedding.id}/members/${member.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ role: "MANAGER", grants: enabled ? [] : ["CAN_MODERATE_GALLERY"] }) });
+      const payload = await response.json() as ApiError & { data?: { grants: Array<"CAN_MODERATE_GALLERY"> } };
+      if (!response.ok || !payload.data) throw new Error(payload.error?.message ?? "We couldn’t update gallery access.");
+      setVisibleMembers((current) => current.map((item) => item.id === member.id ? { ...item, grants: payload.data!.grants } : item));
+      setToast(enabled ? `${member.name} no longer moderates the gallery.` : `${member.name} can now moderate the gallery.`);
+      router.refresh();
+    } catch (reason) { setToast(reason instanceof Error ? reason.message : "We couldn’t update gallery access."); }
+    finally { setPendingAction(null); }
+  }
+
   async function copyLink(invitation: Invitation) {
     const url = freshLinks[invitation.id];
     if (!url) return;
@@ -253,7 +268,7 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
           <section className="mt-10">
             <SectionHeading title="Wedding team" description="People who currently have access to this wedding workspace." count={`${visibleMembers.length} total access ${visibleMembers.length === 1 ? "grant" : "grants"}`} />
             <div className="mt-4 divide-y divide-surface-container overflow-hidden rounded-xl bg-surface-container-lowest shadow-sm">
-              {visibleMembers.map((member) => <MemberRow key={member.id} member={member} currentUserId={user.id} lastAdmin={member.role === "ADMIN" && admins <= 1} busy={pendingAction !== null} onChangeRole={() => { setAccessError(""); setAccessTarget({ member, mode: "role" }); }} onRemove={() => { setAccessError(""); setAccessTarget({ member, mode: "remove" }); }} />)}
+              {visibleMembers.map((member) => <MemberRow key={member.id} member={member} currentUserId={user.id} lastAdmin={member.role === "ADMIN" && admins <= 1} busy={pendingAction !== null} onToggleModeration={() => toggleGalleryModeration(member)} onChangeRole={() => { setAccessError(""); setAccessTarget({ member, mode: "role" }); }} onRemove={() => { setAccessError(""); setAccessTarget({ member, mode: "remove" }); }} />)}
             </div>
           </section>
 
@@ -291,7 +306,7 @@ export function MembersWorkspace({ user, wedding, members, invitations }: { user
 
 function WorkspaceSidebar({ user, wedding }: { user: User; wedding: Wedding }) {
   return <aside className="fixed inset-y-0 left-0 z-40 hidden w-72 flex-col justify-between bg-surface-container-low px-5 py-6 shadow-sm xl:flex">
-    <div><Brand /><div className="mt-7 rounded-xl bg-surface p-4 shadow-sm"><p className="font-serif text-headline-sm">{wedding.brideName} &amp; {wedding.groomName}</p><p className="mt-1 text-label-sm font-semibold uppercase tracking-[0.1em] text-on-surface-variant">{formatDate(wedding.weddingDate)}</p></div><nav aria-label="Workspace sections" className="mt-6 space-y-1"><NavItem href="/dashboard" icon="dashboard">Overview</NavItem><NavItem href="/events" icon="calendar">Events</NavItem><NavItem icon="users">Guests</NavItem><NavItem href="/members" icon="badge" active>Members</NavItem><NavItem icon="check">Tasks</NavItem><NavItem icon="payments">Expenses</NavItem><NavItem icon="gallery">Gallery</NavItem><NavItem href="/settings/wedding" icon="settings">Settings</NavItem></nav></div>
+    <div><Brand /><div className="mt-7 rounded-xl bg-surface p-4 shadow-sm"><p className="font-serif text-headline-sm">{wedding.brideName} &amp; {wedding.groomName}</p><p className="mt-1 text-label-sm font-semibold uppercase tracking-[0.1em] text-on-surface-variant">{formatDate(wedding.weddingDate)}</p></div><nav aria-label="Workspace sections" className="mt-6 space-y-1"><NavItem href="/dashboard" icon="dashboard">Overview</NavItem><NavItem href="/events" icon="calendar">Events</NavItem><NavItem icon="users">Guests</NavItem><NavItem href="/members" icon="badge" active>Members</NavItem><NavItem icon="check">Tasks</NavItem><NavItem icon="payments">Expenses</NavItem><NavItem href="/gallery" icon="gallery">Gallery</NavItem><NavItem href="/settings/wedding" icon="settings">Settings</NavItem></nav></div>
     <div className="rounded-xl bg-surface p-4 shadow-sm"><div className="flex items-center gap-3"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-label-md font-semibold text-on-primary">{initials(user.name)}</span><div className="min-w-0"><p className="truncate text-body-sm font-semibold">{user.name}</p><p className="mt-0.5 text-label-sm text-primary">Admin</p></div></div><div className="mt-3 border-t border-outline-variant/25 pt-3"><LogoutButton compact /></div></div>
   </aside>;
 }
@@ -314,7 +329,7 @@ function SectionHeading({ title, description, count }: { title: string; descript
   return <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between"><div><h2 className="font-serif text-headline-sm">{title}</h2><p className="mt-1 text-body-sm text-on-surface-variant">{description}</p></div><p className="text-label-sm font-semibold uppercase tracking-[0.1em] text-on-surface-variant">{count}</p></div>;
 }
 
-function MemberRow({ member, currentUserId, lastAdmin, busy, onChangeRole, onRemove }: { member: Member; currentUserId: string; lastAdmin: boolean; busy: boolean; onChangeRole: () => void; onRemove: () => void }) {
+function MemberRow({ member, currentUserId, lastAdmin, busy, onToggleModeration, onChangeRole, onRemove }: { member: Member; currentUserId: string; lastAdmin: boolean; busy: boolean; onToggleModeration: () => void; onChangeRole: () => void; onRemove: () => void }) {
   return <article className="flex flex-col gap-4 p-4 transition-colors hover:bg-surface-container-low/50 sm:p-5 lg:flex-row lg:items-center lg:justify-between">
     <div className="flex min-w-0 items-center gap-4">
       <span className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full font-serif text-headline-sm ${member.role === "ADMIN" ? "bg-primary-fixed/60 text-primary" : member.role === "MANAGER" ? "bg-tertiary-fixed/60 text-tertiary" : "bg-secondary-fixed text-secondary"}`}>{initials(member.name)}</span>
@@ -322,6 +337,7 @@ function MemberRow({ member, currentUserId, lastAdmin, busy, onChangeRole, onRem
     </div>
     <div className="space-y-2 lg:text-right">
       <div className="flex flex-wrap items-center gap-2 lg:justify-end"><RoleBadge role={member.role} />
+        {member.role === "MANAGER" && <button type="button" onClick={onToggleModeration} disabled={busy} className={`rounded-lg px-3 py-2.5 text-label-md font-semibold disabled:opacity-50 ${member.grants.includes("CAN_MODERATE_GALLERY") ? "bg-secondary-container text-on-secondary-container" : "bg-surface-container text-on-surface-variant"}`}>{member.grants.includes("CAN_MODERATE_GALLERY") ? "Gallery moderator" : "Grant gallery moderation"}</button>}
         <button type="button" onClick={onChangeRole} disabled={lastAdmin || busy} aria-label={`Change role for ${member.name}`} aria-describedby={lastAdmin ? `last-admin-${member.id}` : undefined} className="rounded-lg bg-surface-container px-3 py-2.5 text-label-md font-semibold hover:bg-surface-container-high disabled:cursor-not-allowed disabled:opacity-50">Change role</button>
         <button type="button" onClick={onRemove} disabled={lastAdmin || busy} aria-label={`Remove access for ${member.name}`} aria-describedby={lastAdmin ? `last-admin-${member.id}` : undefined} className="rounded-lg px-3 py-2.5 text-label-md font-semibold text-error hover:bg-error-container/40 disabled:cursor-not-allowed disabled:opacity-50">Remove access</button>
       </div>

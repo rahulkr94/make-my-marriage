@@ -25,10 +25,11 @@ describe("member role changes", () => {
     for (const role of ["ADMIN", "MANAGER", "MEMBER"]) {
       expect(updateMemberRoleSchema.parse({ role })).toEqual({ role });
     }
+    expect(updateMemberRoleSchema.parse({ role: "MANAGER", grants: ["CAN_MODERATE_GALLERY"] })).toEqual({ role: "MANAGER", grants: ["CAN_MODERATE_GALLERY"] });
   });
 
   it("rejects empty, unsupported, and client-controlled access fields", () => {
-    for (const input of [{}, { role: "OWNER" }, { role: "MEMBER", status: "ACTIVE" }, { role: "ADMIN", weddingId: "other" }, { role: "MANAGER", grants: ["CAN_MODERATE_GALLERY"] }]) {
+    for (const input of [{}, { role: "OWNER" }, { role: "MEMBER", status: "ACTIVE" }, { role: "ADMIN", weddingId: "other" }, { role: "MEMBER", grants: ["CAN_MODERATE_GALLERY"] }]) {
       expect(updateMemberRoleSchema.safeParse(input).success).toBe(false);
     }
   });

@@ -34,6 +34,7 @@ export async function listWeddingMembers(userId: string, weddingId: string) {
         name: user.name,
         email: user.emailDisplay,
         role: membership.role,
+        grants: membership.grants,
         joinedAt: membership.joinedAt.toISOString(),
       }];
     }),

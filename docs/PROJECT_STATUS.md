@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 25 October 2026
-**Current phase:** Expense ledger and payment tracking complete; vendors and private finance attachments planned next
+**Last updated:** 26 October 2026
+**Current phase:** Gallery implementation complete; Reminders and launch planned next
 **Overall status:** Active development
 
 ## Purpose
@@ -19,14 +19,14 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Application scaffold | Complete | Next.js App Router, TypeScript, Tailwind CSS, ESLint, repository structure, environment examples, and Webpack-based development/build scripts are in place. |
 | Public homepage | Complete | Responsive marketing page at `/` with navigation, hero, labeled sample wedding workspace, feature overview, four-step workflow, guest experience, family roles, gallery preview, FAQ, and closing call to action. |
 | Accounts | Complete | Completed 29 September 2026. Signup, login, logout, password reset, secure sessions, account UI, validation, rate limits, and reset email delivery are implemented and verified with MongoDB Atlas and Resend. |
-| Wedding workspace | Core complete | Wedding setup, Admin-only settings, invitations, role changes, and member removal are complete, including concurrent last-admin protection. Gallery moderation grant controls remain deferred to Gallery. |
+| Wedding workspace | Core complete | Wedding setup, Admin-only settings, invitations, role changes, member removal, and Admin-managed gallery moderation grants for Managers are complete, including concurrent last-admin protection. |
 | Dashboard foundation | Complete | Responsive `/dashboard` shell uses live wedding and member data, clearly labels unavailable modules, and provides the permanent signed-in workspace destination. |
 | Events | Lifecycle complete | Responsive listing, create/edit/details flows, venues, time-zone-aware schedules, directions, draft publishing, cancellation/restoration, soft deletion, optional live-stream links, role-based visibility, and dashboard integration. Guest assignments continue in the Guests milestone. |
 | Guests and invitations | Complete | Responsive guest records, event assignments, high-entropy private links, email/manual delivery, public assigned-event invitations, revocation, regeneration, and downloadable QR codes are complete. |
 | RSVP and dashboard metrics | Complete | Per-event Yes/No responses, attendee counts, close/reopen controls, planner summaries, confirmation emails, and live dashboard metrics. |
 | Tasks | Complete | Planner-created work items, same-wedding assignees and ceremony context, due dates, priorities, role-scoped status updates, dashboard attention states, and the combined wedding timeline. |
-| Finances | Expenses complete | Actual expenses, payment history, balances, category/event totals, planner-only access, and dashboard metrics are complete. Vendors, bills, and private attachments remain. |
-| Gallery | Not started | Photo uploads, moderation, and shareable gallery access. |
+| Finances | Complete | Actual expenses, payment history, vendor records, ceremony assignments, quotes, linked expenses, and private receipt, bill, contract, quotation, and supporting-document attachments are complete. Deployment requires private R2 credentials and bucket CORS configuration. |
+| Gallery | Complete | Member and invitation-scoped guest uploads, private R2 storage, ceremony classification, moderation, approved-only shared gallery access, token rotation/revocation, and QR sharing are complete. |
 | Reminders and launch | Not started | Scheduled emails, final accessibility checks, and production setup. |
 
 ## Completed work
@@ -205,7 +205,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   rejoining, and concurrent last-admin protection. Integration tests create and
   clean up a separate temporary database; opt in with
   `NODE_ENV=development MMM_RUN_DB_TESTS=1 npx vitest run tests/integration/member-access.test.ts --testTimeout=20000`.
-- Gallery moderation grants remain deferred until the Gallery feature exists.
+- Added the explicit Manager gallery-moderation grant in the Gallery milestone.
 
 ### Events and ceremonies — Release 1 (16 October 2026)
 
@@ -408,10 +408,85 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   and 390-pixel mobile states in the signed-in local app with no horizontal
   overflow, then removed the temporary verification record.
 
+### Vendor management (25 October 2026)
+
+- Applied the finalized Stitch desktop and mobile direction to a responsive
+  `/vendors` directory with live quoted, paid, pending, and vendor totals;
+  search, category, ceremony, payment-state, and sort controls; desktop tables;
+  mobile cards; empty states; and focused add, edit, details, and archive flows.
+- Added wedding-scoped vendor list, create, detail, update, and archive APIs with
+  strict contact, paise-string, and event-assignment validation; bounded
+  pagination; same-origin and rate-limit protection; controlled indexes; and
+  derived no-quote, unpaid, partial, paid, and overpaid states.
+- Enforced Admin and Manager finance access and same-wedding ceremony checks in
+  the service layer. Regular Members cannot access vendor records, and archived
+  vendors leave historical linked expenses available.
+- Connected expenses to active vendor records with same-wedding validation,
+  vendor-name snapshots, vendor preselection from details, and linked-expense
+  summaries. Vendor quoted and paid amounts remain manually maintained and do
+  not change automatically when an expense is recorded.
+- Added permanent Vendors navigation and dashboard progress. Passed ESLint,
+  TypeScript, 82 non-database tests, six relevant isolated MongoDB expense and
+  vendor integration tests, the production build, and development index synchronization. Reviewed
+  empty, create, list, details, edit, expense-preselection, desktop, and
+  390-pixel mobile states in the signed-in local app with no horizontal overflow.
+
+### Private financial attachments (25 October 2026)
+
+- Applied the finalized Stitch desktop expense-receipt, desktop vendor-document,
+  and mobile expense directions to private attachment sections embedded in live
+  expense and vendor details. Added responsive empty, upload-progress, populated,
+  search, category-filter, preview/download, rename, replace, and delete states.
+- Added wedding-scoped private document listing, upload-intent, completion,
+  metadata-update, signed-download, and deletion APIs. Uploads use short-lived
+  object-specific R2 URLs, opaque object keys, a private bucket, Admin/Manager
+  authorization, same-wedding expense/vendor checks, strict 10 MB type limits,
+  and idempotent completion.
+- Completion verifies the stored object size, MIME type, and representative file
+  signature before making a document visible. Download URLs expire after five
+  minutes; raw object keys never reach the browser or public guest/gallery APIs.
+- Documented the four required R2 environment variables and browser PUT CORS
+  policy. Real provider upload/download verification remains a deployment check
+  because no R2 credentials are configured in the local environment.
+- Passed ESLint, TypeScript, 86 non-database tests, eight isolated MongoDB
+  expense/vendor/document integration tests, the production build, development
+  index synchronization, and production dependency audit. Reviewed expense and
+  vendor empty states, the upload modal, desktop layouts, and 390-pixel mobile
+  layouts in the signed-in app with no overflow or browser console errors.
+
+### Wedding gallery (26 October 2026)
+
+- Applied the finalized Stitch desktop management, mobile management, mobile
+  guest-upload, and desktop shared-gallery direction to responsive `/gallery`,
+  `/i/[token]`, and `/g/[token]` experiences. Removed prototype-only controls and
+  sample counts so every summary, filter, empty state, and moderation queue uses
+  live wedding data.
+- Added member and guest photo upload-intent and idempotent completion APIs using
+  private R2 objects, opaque keys, short-lived signed URLs, 10 MB JPG/PNG/WEBP
+  limits, stored-object metadata checks, and image-signature validation. Guest
+  uploads revalidate the active invitation and current ceremony assignment.
+- Added wedding-scoped photo records, ceremony and Other classification, pending,
+  approved, and rejected moderation states, and Admin or explicitly granted
+  Manager review access. Admins can grant or remove the Manager gallery
+  moderation permission from Members.
+- Added approved-only shared galleries with high-entropy hashed tokens,
+  five-minute photo URLs, download authorization, link rotation, immediate QR
+  generation, and pause/revocation. Old links and downloaded QR codes stop
+  resolving after rotation or revocation.
+- Connected live approved and pending counts to the dashboard and made Gallery a
+  permanent workspace destination for every active member.
+- Passed ESLint, TypeScript, 90 non-database tests, 12 relevant isolated MongoDB
+  gallery/member/document integration tests, the production build, and index
+  synchronization. Reviewed the desktop empty gallery, upload dialog, share
+  dialog, navigation, and browser console with no application errors. Real R2
+  transfer verification remains a deployment check because local R2 credentials
+  are not configured.
+
 ## Current focus
 
-The next planned Finances increment is **Vendors**, followed by private bill,
-receipt, and contract attachments. Start only when explicitly requested.
+The next planned milestone is **Reminders and launch**: scheduled notification
+delivery, final accessibility and responsive checks, and production readiness.
+Start only when explicitly requested.
 
 ## Update policy
 

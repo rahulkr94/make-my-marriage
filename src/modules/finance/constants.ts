@@ -42,4 +42,48 @@ export const PAYMENT_METHOD_LABELS: Record<(typeof PAYMENT_METHODS)[number], str
 };
 
 export const EXPENSES_PAGE_SIZE = 25;
+
+export const VENDOR_CATEGORIES = [
+  "VENUE",
+  "CATERING",
+  "PHOTOGRAPHY",
+  "VIDEOGRAPHY",
+  "DECOR",
+  "ENTERTAINMENT",
+  "MAKEUP",
+  "CLOTHING",
+  "JEWELLERY",
+  "TRANSPORT",
+  "ACCOMMODATION",
+  "INVITATIONS",
+  "OTHER",
+] as const;
+
+export const VENDOR_CATEGORY_LABELS: Record<(typeof VENDOR_CATEGORIES)[number], string> = {
+  VENUE: "Venue",
+  CATERING: "Catering",
+  PHOTOGRAPHY: "Photography",
+  VIDEOGRAPHY: "Videography",
+  DECOR: "Décor",
+  ENTERTAINMENT: "Entertainment",
+  MAKEUP: "Makeup",
+  CLOTHING: "Clothing",
+  JEWELLERY: "Jewellery",
+  TRANSPORT: "Transport",
+  ACCOMMODATION: "Accommodation",
+  INVITATIONS: "Invitations",
+  OTHER: "Other",
+};
+
+export const VENDOR_PAYMENT_STATUSES = ["NO_QUOTE", "UNPAID", "PARTIAL", "PAID", "OVERPAID"] as const;
+export const VENDOR_PAYMENT_STATUS_LABELS: Record<(typeof VENDOR_PAYMENT_STATUSES)[number], string> = {
+  NO_QUOTE: "No quote",
+  UNPAID: "Unpaid",
+  PARTIAL: "Partially paid",
+  PAID: "Paid in full",
+  OVERPAID: "Overpaid",
+};
+
+export const VENDOR_SORTS = ["RECENT", "NAME", "PENDING"] as const;
+export const VENDORS_PAGE_SIZE = 20;
 export function canManageFinances(role: string) { return role === "ADMIN" || role === "MANAGER"; }

@@ -10,7 +10,7 @@ describe("expense schemas", () => {
       expenseDate: "2027-01-10", paidBy: "Joint wedding fund",
     })).toEqual({
       title: "Royal Orchid Palace", amountMinor: "60000000", category: "VENUE", eventId,
-      expenseDate: "2027-01-10", dueDate: null, paidBy: "Joint wedding fund", vendorName: "", notes: "",
+      expenseDate: "2027-01-10", dueDate: null, paidBy: "Joint wedding fund", vendorId: null, vendorName: "", notes: "",
       initialPaidAmountMinor: "0", initialPaymentMethod: "BANK_TRANSFER", initialPaymentReference: "",
     });
   });

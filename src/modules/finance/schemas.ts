@@ -21,6 +21,7 @@ const expenseFields = {
   expenseDate: localDate,
   dueDate: optionalDate,
   paidBy: z.string().trim().min(2, "Enter who is responsible for this expense.").max(120),
+  vendorId: optionalObjectId,
   vendorName: z.string().trim().max(160),
   notes: z.string().trim().max(2000),
 };
@@ -35,6 +36,7 @@ export const createExpenseSchema = z.object({
   ...expenseFields,
   eventId: expenseFields.eventId.optional().default(null),
   dueDate: expenseFields.dueDate.optional().default(null),
+  vendorId: expenseFields.vendorId.optional().default(null),
   vendorName: expenseFields.vendorName.optional().default(""),
   notes: expenseFields.notes.optional().default(""),
   initialPaidAmountMinor: optionalMoneyMinor.optional().default("0"),

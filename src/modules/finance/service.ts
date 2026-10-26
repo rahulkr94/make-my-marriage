@@ -4,13 +4,14 @@ import { AuthError } from "@/modules/auth/request-security";
 import { EventModel } from "@/modules/events/models";
 import { WeddingMemberModel, WeddingModel } from "@/modules/weddings/models";
 import { canManageFinances, EXPENSES_PAGE_SIZE, EXPENSE_CATEGORIES } from "./constants";
-import { ExpenseModel, type WeddingExpense } from "./models";
+import { ExpenseModel, VendorModel, type WeddingExpense } from "./models";
 import type { CreateExpenseInput, ExpenseListQuery, RecordExpensePaymentInput, UpdateExpenseInput } from "./schemas";
 
 export async function createExpense(userId: string, weddingId: string, input: CreateExpenseInput) {
   await connectToDatabase();
   const membership = await requireFinanceAccess(userId, weddingId);
   const event = await validateEvent(weddingId, input.eventId);
+  const vendor = await validateVendor(weddingId, input.vendorId);
   const amountMinor = BigInt(input.amountMinor);
   const paidAmountMinor = BigInt(input.initialPaidAmountMinor);
   const paymentStatus = derivePaymentStatus(amountMinor, paidAmountMinor);
@@ -35,7 +36,8 @@ export async function createExpense(userId: string, weddingId: string, input: Cr
     dueDate: input.dueDate,
     paidBy: input.paidBy,
     paymentStatus,
-    vendorName: input.vendorName,
+    vendorId: vendor?._id ?? null,
+    vendorName: vendor?.name ?? input.vendorName,
     notes: input.notes,
     payments,
     createdBy: userId,
@@ -60,11 +62,12 @@ export async function listExpenses(userId: string, weddingId: string, query: Exp
     { notes: { $regex: escapeRegex(query.q), $options: "i" } },
   ];
 
-  const [expenses, total, allExpenses, events] = await Promise.all([
+  const [expenses, total, allExpenses, events, vendors] = await Promise.all([
     ExpenseModel.find(filter).sort({ expenseDate: -1, createdAt: -1, _id: 1 }).skip((query.page - 1) * EXPENSES_PAGE_SIZE).limit(EXPENSES_PAGE_SIZE).lean(),
     ExpenseModel.countDocuments(filter),
     ExpenseModel.find({ weddingId, deletedAt: null }).select("amountMinor paidAmountMinor category eventId paymentStatus expenseDate title vendorName").sort({ expenseDate: -1 }).lean(),
     EventModel.find({ weddingId, deletedAt: null }).sort({ startsAtUtc: 1, _id: 1 }).lean(),
+    VendorModel.find({ weddingId, deletedAt: null }).select("name category").sort({ name: 1, _id: 1 }).lean(),
   ]);
   const eventById = new Map(events.map((event) => [String(event._id), event]));
   return {
@@ -74,6 +77,7 @@ export async function listExpenses(userId: string, weddingId: string, query: Exp
     page: query.page,
     pageSize: EXPENSES_PAGE_SIZE,
     eventOptions: events.filter((event) => event.status !== "CANCELLED").map((event) => ({ id: String(event._id), name: event.name, localDate: event.localDate })),
+    vendorOptions: vendors.map((vendor) => ({ id: String(vendor._id), name: vendor.name, category: vendor.category })),
   };
 }
 
@@ -98,6 +102,8 @@ export async function updateExpense(userId: string, weddingId: string, expenseId
       if (!expense) throw new AuthError("NOT_FOUND", "Expense not found.", 404);
       const eventId = input.eventId !== undefined ? input.eventId : expense.eventId ? String(expense.eventId) : null;
       const event = await validateEvent(weddingId, eventId, session, input.eventId === undefined);
+      const vendorId = input.vendorId !== undefined ? input.vendorId : expense.vendorId ? String(expense.vendorId) : null;
+      const vendor = await validateVendor(weddingId, vendorId, session, input.vendorId === undefined);
       const nextAmount = input.amountMinor !== undefined ? BigInt(input.amountMinor) : expense.amountMinor;
       if (nextAmount < expense.paidAmountMinor) throw new AuthError("AMOUNT_BELOW_PAID", "Total amount cannot be less than payments already recorded.", 409);
       const expenseDate = input.expenseDate ?? expense.expenseDate;
@@ -111,7 +117,7 @@ export async function updateExpense(userId: string, weddingId: string, expenseId
         ...(input.expenseDate !== undefined ? { expenseDate: input.expenseDate } : {}),
         ...(input.dueDate !== undefined ? { dueDate: input.dueDate } : {}),
         ...(input.paidBy !== undefined ? { paidBy: input.paidBy } : {}),
-        ...(input.vendorName !== undefined ? { vendorName: input.vendorName } : {}),
+        ...(input.vendorId !== undefined ? { vendorId: vendor?._id ?? null, vendorName: vendor?.name ?? input.vendorName ?? "" } : input.vendorName !== undefined ? { vendorName: input.vendorName } : {}),
         ...(input.notes !== undefined ? { notes: input.notes } : {}),
         paymentStatus: derivePaymentStatus(nextAmount, expense.paidAmountMinor),
       });
@@ -174,7 +180,7 @@ export async function getExpenseDashboardSummary(userId: string, weddingId: stri
   };
 }
 
-async function requireFinanceAccess(userId: string, weddingId: string, session?: ClientSession) {
+export async function requireFinanceAccess(userId: string, weddingId: string, session?: ClientSession) {
   if (!isValidObjectId(weddingId)) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
   const membership = await WeddingMemberModel.findOne({ userId, weddingId, status: "ACTIVE" }).session(session ?? null).lean();
   if (!membership) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
@@ -197,6 +203,13 @@ async function validateEvent(weddingId: string, eventId: string | null | undefin
   return event;
 }
 
+async function validateVendor(weddingId: string, vendorId: string | null | undefined, session?: ClientSession, allowArchived = false) {
+  if (!vendorId) return null;
+  const vendor = await VendorModel.findOne({ _id: vendorId, weddingId, ...(allowArchived ? {} : { deletedAt: null }) }).session(session ?? null).lean();
+  if (!vendor) throw new AuthError("INVALID_VENDOR", "Choose an active vendor from this wedding.", 409);
+  return vendor;
+}
+
 function serializeExpense(expense: WeddingExpense & { _id: unknown; createdAt: Date; updatedAt: Date }, event: { _id: unknown; name: string; localDate: string; status: string } | null | undefined) {
   const amount = toBigInt(expense.amountMinor);
   const paid = toBigInt(expense.paidAmountMinor);
@@ -206,7 +219,7 @@ function serializeExpense(expense: WeddingExpense & { _id: unknown; createdAt: D
     id: String(expense._id), title: expense.title, amountMinor, paidAmountMinor,
     balanceMinor: (amount - paid).toString(), currency: "INR" as const,
     category: expense.category, expenseDate: expense.expenseDate, dueDate: expense.dueDate ?? null,
-    paidBy: expense.paidBy, paymentStatus: expense.paymentStatus, vendorName: expense.vendorName ?? "", notes: expense.notes ?? "",
+    paidBy: expense.paidBy, paymentStatus: expense.paymentStatus, vendorId: expense.vendorId ? String(expense.vendorId) : null, vendorName: expense.vendorName ?? "", notes: expense.notes ?? "",
     eventId: expense.eventId ? String(expense.eventId) : null,
     event: event ? { id: String(event._id), name: event.name, localDate: event.localDate, status: event.status } : null,
     payments: expense.payments.map((payment) => ({

@@ -5,6 +5,7 @@ import { headers } from "next/headers";
 import { Brand } from "@/components/marketing/brand";
 import { PublicInvitationQr } from "@/components/invitations/public-invitation-qr";
 import { PublicEventRsvp } from "@/components/rsvp/public-event-rsvp";
+import { GuestPhotoUpload } from "@/components/gallery/guest-photo-upload";
 import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
 import { hashToken } from "@/modules/auth/crypto";
 import { enforceRateLimit } from "@/modules/auth/rate-limit";
@@ -44,6 +45,7 @@ export default async function PublicInvitationPage({ params }: { params: Promise
         {invitation.events.length ? <div className="mx-auto mt-9 max-w-3xl space-y-5">{invitation.events.map((event, index) => <CeremonyCard key={event.id} event={event} index={index} token={token} maximum={invitation.rsvpMaxAttendees} />)}</div> : <div className="mx-auto mt-9 max-w-2xl rounded-xl border border-dashed border-outline-variant bg-surface-container-low p-7 text-center"><h3 className="font-serif text-headline-sm">Your itinerary is being prepared</h3><p className="mt-2 text-body-sm leading-6 text-on-surface-variant">Please check this private invitation again after the couple finishes assigning your ceremonies.</p></div>}
       </section>
 
+      <GuestPhotoUpload token={token} coupleName={coupleName} events={invitation.events.map((event) => ({ id: event.id, name: event.name }))} />
       <section className="mx-auto mt-12 max-w-3xl px-5 text-center sm:px-8"><div className="rounded-xl bg-primary px-6 py-8 text-on-primary sm:px-10"><p className="text-label-sm font-semibold uppercase tracking-[0.18em] text-primary-fixed">Celebration date</p><p className="mt-3 font-serif text-headline-md">{formatWeddingDate(invitation.wedding.weddingDate)}</p><p className="mt-2 text-body-sm text-on-primary-container">{invitation.wedding.mainVenueName} · {invitation.wedding.mainAddress}</p></div></section>
       <PublicInvitationQr guestName={invitation.guest.name} />
       <blockquote className="mx-auto mt-12 max-w-2xl px-6 text-center font-serif text-headline-sm italic leading-9 text-on-surface-variant">“The warmth of your presence would make our celebration complete.”</blockquote>

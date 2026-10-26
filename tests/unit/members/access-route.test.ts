@@ -37,7 +37,7 @@ describe("member access endpoints", () => {
   });
 
   it("uses the signed-in actor and returns an uncached updated role", async () => {
-    vi.mocked(updateMemberRole).mockResolvedValue({ id: "member", userId: "target", role: "ADMIN", status: "ACTIVE" });
+    vi.mocked(updateMemberRole).mockResolvedValue({ id: "member", userId: "target", role: "ADMIN", status: "ACTIVE", grants: [] });
     const response = await PATCH(request("PATCH", { role: "ADMIN" }), context);
     expect(response.status).toBe(200);
     expect(response.headers.get("Cache-Control")).toContain("no-store");
@@ -53,7 +53,7 @@ describe("member access endpoints", () => {
   });
 
   it("removes access through the scoped service", async () => {
-    vi.mocked(removeWeddingMember).mockResolvedValue({ id: "member", userId: "target", role: "MEMBER", status: "REMOVED" });
+    vi.mocked(removeWeddingMember).mockResolvedValue({ id: "member", userId: "target", role: "MEMBER", status: "REMOVED", grants: [] });
     expect((await DELETE(request("DELETE"), context)).status).toBe(200);
     expect(removeWeddingMember).toHaveBeenCalledWith("actor", "wedding", "member");
   });

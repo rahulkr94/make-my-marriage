@@ -5,14 +5,14 @@ import { WeddingMemberModel, WeddingModel } from "@/modules/weddings/models";
 import type { UpdateMemberRoleInput } from "./schemas";
 
 export async function updateMemberRole(userId: string, weddingId: string, memberId: string, input: UpdateMemberRoleInput) {
-  return changeMemberAccess(userId, weddingId, memberId, input.role);
+  return changeMemberAccess(userId, weddingId, memberId, input.role, input.grants);
 }
 
 export async function removeWeddingMember(userId: string, weddingId: string, memberId: string) {
   return changeMemberAccess(userId, weddingId, memberId, null);
 }
 
-async function changeMemberAccess(userId: string, weddingId: string, memberId: string, role: UpdateMemberRoleInput["role"] | null) {
+async function changeMemberAccess(userId: string, weddingId: string, memberId: string, role: UpdateMemberRoleInput["role"] | null, grants?: Array<"CAN_MODERATE_GALLERY">) {
   if (!isValidObjectId(weddingId) || !isValidObjectId(memberId)) {
     throw new AuthError("NOT_FOUND", "Wedding member not found.", 404);
   }
@@ -51,8 +51,10 @@ async function changeMemberAccess(userId: string, weddingId: string, memberId: s
         member.role = role;
         member.grants = [];
       }
+      if (role && role !== "MANAGER") member.grants = [];
+      if (role === "MANAGER" && grants !== undefined) member.grants = grants;
       await member.save({ session });
-      return { id: String(member._id), userId: String(member.userId), role: member.role, status: member.status };
+      return { id: String(member._id), userId: String(member.userId), role: member.role, status: member.status, grants: member.grants };
     });
   } finally {
     await session.endSession();

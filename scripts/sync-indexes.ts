@@ -9,7 +9,9 @@ import { EventGuestModel, GuestModel } from "../src/modules/guests/models";
 import { GuestInvitationModel } from "../src/modules/invitations/models";
 import { RsvpModel } from "../src/modules/rsvp/models";
 import { TaskModel } from "../src/modules/tasks/models";
-import { ExpenseModel } from "../src/modules/finance/models";
+import { ExpenseModel, VendorModel } from "../src/modules/finance/models";
+import { DocumentModel, FileModel } from "../src/modules/documents/models";
+import { PhotoModel } from "../src/modules/gallery/models";
 
 loadEnvConfig(process.cwd());
 
@@ -30,6 +32,10 @@ async function main() {
     RsvpModel.syncIndexes(),
     TaskModel.syncIndexes(),
     ExpenseModel.syncIndexes(),
+    VendorModel.syncIndexes(),
+    FileModel.syncIndexes(),
+    DocumentModel.syncIndexes(),
+    PhotoModel.syncIndexes(),
   ]);
 
   console.log("Application indexes synchronized.", results);

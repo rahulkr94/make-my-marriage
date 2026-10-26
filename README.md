@@ -73,3 +73,32 @@ Node.js 20.19.0. Revisit these pins when upgrading to a supported Node.js LTS.
 Development and build scripts use Next.js's supported Webpack option because
 Turbopack's CSS worker could not bind its internal port in the scaffold environment.
 The app still uses the App Router; this bundler choice can be revisited later.
+
+## Private file and gallery storage
+
+Expense receipts, vendor documents, and wedding gallery photos use a private
+Cloudflare R2 bucket. Set
+`R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, and
+`R2_BUCKET_NAME` in the local and Vercel environments. Keep the token limited to
+object read/write access for this bucket.
+
+The browser uploads directly to an object-specific signed URL. Configure the R2
+bucket CORS policy for the deployed application origin and local development:
+
+```json
+[
+  {
+    "AllowedOrigins": ["https://your-app.vercel.app", "http://localhost:3000"],
+    "AllowedMethods": ["PUT"],
+    "AllowedHeaders": ["Content-Type"],
+    "ExposeHeaders": ["ETag"],
+    "MaxAgeSeconds": 3600
+  }
+]
+```
+
+Replace the Vercel example with the production domain. The application verifies
+the stored size, content type, and file signature before a document or photo
+becomes available, and issues a new short-lived signed URL for every preview or
+download. Gallery pages expose only approved photos after validating the private
+share token.
