@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { CreateTaskButton, TaskWorkspace } from "@/components/tasks/task-workspace";
 import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
+import { SummaryMetric } from "@/components/workspace/summary-metric";
 import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { getCurrentUser } from "@/modules/auth/session";
 import { TASK_PRIORITY_LABELS, TASK_STATUS_LABELS } from "@/modules/tasks/constants";
@@ -49,11 +50,11 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
       </nav>
 
       <section aria-label="Task summary" className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-5">
-        <Metric label="Open" value={data.summary.open} icon="clock" />
-        <Metric label="In progress" value={data.summary.inProgress} icon="refresh" />
-        <Metric label="Overdue" value={data.summary.overdue} icon="bell" urgent={data.summary.overdue > 0} />
-        <Metric label="Completed" value={data.summary.completed} icon="check" />
-        <article className="col-span-2 rounded-xl bg-secondary-container p-4 shadow-sm lg:col-span-1"><p className="text-label-sm font-semibold uppercase tracking-[0.08em] text-on-secondary-container">Overall completion</p><p className="mt-2 font-serif text-headline-md text-on-secondary-fixed">{data.summary.completionRate}%</p><div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface/70"><div className="h-full rounded-full bg-secondary" style={{ width: `${data.summary.completionRate}%` }} /></div></article>
+        <SummaryMetric label="Open" value={data.summary.open} icon="clock" />
+        <SummaryMetric label="In progress" value={data.summary.inProgress} icon="refresh" tone="primary" />
+        <SummaryMetric label="Overdue" value={data.summary.overdue} icon="bell" tone={data.summary.overdue > 0 ? "error" : "tertiary"} />
+        <SummaryMetric label="Completed" value={data.summary.completed} icon="check" tone="secondary" />
+        <SummaryMetric label="Overall completion" value={`${data.summary.completionRate}%`} icon="check" tone="secondary" progress={data.summary.completionRate} className="col-span-2 lg:col-span-1" />
       </section>
 
       {view === "tasks" && <form action="/tasks" method="get" className="mt-7 rounded-xl bg-surface-container-low p-4 shadow-sm"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[minmax(14rem,1.4fr)_repeat(5,minmax(8rem,.65fr))_auto]"><label className="relative"><span className="sr-only">Search tasks</span><WorkspaceIcon name="search" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" /><input name="q" defaultValue={query.q} placeholder="Search tasks" className="w-full rounded-lg border border-transparent bg-surface px-10 py-3 text-body-sm outline-none focus:border-primary" /></label><Select name="status" label="All statuses" value={query.status ?? ""} options={Object.entries(TASK_STATUS_LABELS).map(([value, label]) => ({ value, label }))} /><Select name="priority" label="All priorities" value={query.priority ?? ""} options={Object.entries(TASK_PRIORITY_LABELS).map(([value, label]) => ({ value, label }))} />{data.canManage && <Select name="assignedMemberId" label="All assignees" value={query.assignedMemberId ?? ""} options={data.assigneeOptions.map((member) => ({ value: member.id, label: member.name }))} />}<Select name="eventId" label="All ceremonies" value={query.eventId ?? ""} options={data.eventOptions.map((event) => ({ value: event.id, label: event.name }))} /><Select name="due" label="All due dates" value={query.due ?? ""} options={[{ value: "OVERDUE", label: "Overdue" }, { value: "THIS_WEEK", label: "Due this week" }, { value: "UPCOMING", label: "Upcoming" }, { value: "NO_DUE_DATE", label: "No due date" }]} /><button className="rounded-lg bg-primary px-5 py-3 text-body-sm font-semibold text-on-primary">Apply</button></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-label-sm text-on-surface-variant"><span>{data.total} matching task{data.total === 1 ? "" : "s"}</span>{Object.keys(values).length > 0 && <Link href="/tasks" className="font-semibold text-primary hover:underline">Reset filters</Link>}</div></form>}
@@ -64,6 +65,5 @@ export default async function TasksPage({ searchParams }: { searchParams: Promis
   </WorkspaceShell>;
 }
 
-function Metric({ label, value, icon, urgent = false }: { label: string; value: number; icon: Parameters<typeof WorkspaceIcon>[0]["name"]; urgent?: boolean }) { return <article className={`rounded-xl p-4 shadow-sm ${urgent ? "bg-error-container" : "bg-surface-container-low"}`}><div className="flex items-center justify-between"><p className={`text-label-sm font-semibold uppercase tracking-[0.08em] ${urgent ? "text-on-error-container" : "text-on-surface-variant"}`}>{label}</p><WorkspaceIcon name={icon} className={urgent ? "text-error" : "text-tertiary"} /></div><p className="mt-3 font-serif text-headline-md">{value}</p></article>; }
 function Select({ name, label, value, options }: { name: string; label: string; value: string; options: Array<{ value: string; label: string }> }) { return <label><span className="sr-only">{label}</span><select name={name} defaultValue={value} className="w-full rounded-lg border border-transparent bg-surface px-3 py-3 text-body-sm outline-none focus:border-primary"><option value="">{label}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>; }
 function PageLink({ raw, page, disabled, children }: { raw: RawSearch; page: number; disabled: boolean; children: string }) { if (disabled) return <span className="rounded-lg px-4 py-2 text-body-sm text-outline">{children}</span>; const params = new URLSearchParams(); for (const [key, value] of Object.entries(raw)) { const item = Array.isArray(value) ? value[0] : value; if (item && key !== "page" && key !== "taskId") params.set(key, item); } params.set("page", String(page)); return <Link href={`/tasks?${params}`} className="rounded-lg bg-surface-container px-4 py-2 text-body-sm font-semibold">{children}</Link>; }

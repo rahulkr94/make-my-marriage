@@ -32,5 +32,5 @@ export function AcceptMemberInvitationButton({ token }: { token: string }) {
     }
   }
 
-  return <div className="mt-5"><button type="button" onClick={accept} disabled={pending} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3.5 text-body-sm font-semibold text-on-primary hover:bg-primary-container disabled:opacity-55"><WorkspaceIcon name="check" className="text-lg" />{pending ? "Joining wedding…" : "Accept invitation"}</button>{error && <p role="alert" className="mt-3 rounded-lg bg-error-container p-3 text-body-sm text-on-error-container">{error}</p>}</div>;
+  return <div className="mt-5"><button type="button" onClick={accept} disabled={pending} className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-primary px-5 py-3.5 text-body-sm font-semibold text-on-primary hover:bg-primary-hover disabled:opacity-55"><WorkspaceIcon name="check" className="text-lg" />{pending ? "Joining wedding…" : "Accept invitation"}</button>{error && <p role="alert" className="mt-3 rounded-lg bg-error-container p-3 text-body-sm text-on-error-container">{error}</p>}</div>;
 }

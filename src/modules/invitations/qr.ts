@@ -5,6 +5,6 @@ export async function createInvitationQrDataUrl(invitationUrl: string) {
     errorCorrectionLevel: "M",
     margin: 2,
     width: 720,
-    color: { dark: "#644b32", light: "#fff8f3" },
+    color: { dark: "#964400", light: "#fff8f3" },
   });
 }

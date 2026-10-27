@@ -12,7 +12,8 @@
     "lint": "eslint . --max-warnings=0",
     "typecheck": "next typegen && tsc --noEmit",
     "test": "vitest run",
-    "db:sync-indexes": "tsx scripts/sync-indexes.ts"
+    "db:sync-indexes": "tsx scripts/sync-indexes.ts",
+    "launch:validate-env": "tsx scripts/check-production-env.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1156.0",

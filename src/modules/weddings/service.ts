@@ -1,3 +1,4 @@
+import { isValidObjectId, Types } from "mongoose";
 import { connectToDatabase } from "@/lib/mongodb";
 import { AuthError } from "@/modules/auth/request-security";
 import { EventModel } from "@/modules/events/models";
@@ -46,20 +47,30 @@ export async function createWedding(userId: string, input: CreateWeddingInput) {
 
 export async function getWorkspaceForUser(userId: string) {
   await connectToDatabase();
-  const membership = await WeddingMemberModel.findOne({ userId, status: "ACTIVE" }).lean();
-  if (!membership) return null;
-
-  const wedding = await WeddingModel.findById(membership.weddingId).lean();
-  if (!wedding) return null;
+  if (!isValidObjectId(userId)) return null;
+  const [result] = await WeddingMemberModel.aggregate<{
+    _id: unknown;
+    weddingId: unknown;
+    role: "ADMIN" | "MANAGER" | "MEMBER";
+    grants: Array<"CAN_MODERATE_GALLERY">;
+    wedding: Parameters<typeof sanitizeWedding>[0];
+  }>([
+    { $match: { userId: new Types.ObjectId(userId), status: "ACTIVE" } },
+    { $limit: 1 },
+    { $lookup: { from: WeddingModel.collection.name, localField: "weddingId", foreignField: "_id", as: "wedding" } },
+    { $set: { wedding: { $first: "$wedding" } } },
+    { $match: { wedding: { $ne: null } } },
+  ]);
+  if (!result) return null;
 
   return {
     membership: {
-      id: String(membership._id),
-      weddingId: String(membership.weddingId),
-      role: membership.role,
-      grants: membership.grants,
+      id: String(result._id),
+      weddingId: String(result.weddingId),
+      role: result.role,
+      grants: result.grants,
     },
-    wedding: sanitizeWedding(wedding),
+    wedding: sanitizeWedding(result.wedding),
   };
 }
 

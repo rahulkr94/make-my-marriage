@@ -50,15 +50,15 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
       </section>
 
       <section aria-label="Expense summary" className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Metric label="Recorded expenses" value={formatMoney(data.summary.totalMinor)} icon="payments" />
-        <Metric label="Amount paid" value={formatMoney(data.summary.paidMinor)} icon="check" tone="success" />
-        <Metric label="Outstanding" value={formatMoney(data.summary.outstandingMinor)} icon="clock" tone={data.summary.outstandingMinor === "0" ? "success" : "warning"} />
-        <Metric label="Expense records" value={String(data.summary.count)} icon="dashboard" />
+        <Metric label="Recorded expenses" value={formatMoney(data.summary.totalMinor)} icon="payments" tone="recorded" />
+        <Metric label="Amount paid" value={formatMoney(data.summary.paidMinor)} icon="check" tone="paid" />
+        <Metric label="Outstanding" value={formatMoney(data.summary.outstandingMinor)} icon="clock" tone="outstanding" />
+        <Metric label="Expense records" value={String(data.summary.count)} icon="dashboard" tone="neutral" />
       </section>
 
       {data.summary.count > 0 && <section className="mt-6 grid gap-5 lg:grid-cols-[1.35fr_.65fr]">
         <article className="rounded-xl bg-surface-container-low p-5 shadow-sm sm:p-6"><div className="flex flex-wrap items-end justify-between gap-3"><div><h2 className="text-title-lg">Payment progress</h2><p className="mt-1 text-body-sm text-on-surface-variant">{formatMoney(data.summary.paidMinor)} paid of {formatMoney(data.summary.totalMinor)}</p></div><span className="rounded-full bg-secondary-container px-3 py-1 text-label-md font-semibold text-on-secondary-container">{percent(data.summary.paidMinor, data.summary.totalMinor)}% settled</span></div><div className="mt-6 h-3 overflow-hidden rounded-full bg-surface-container-highest"><div className="h-full rounded-full bg-secondary" style={{ width: `${percent(data.summary.paidMinor, data.summary.totalMinor)}%` }} /></div><div className="mt-4 flex flex-wrap gap-x-6 gap-y-2 text-body-sm"><span className="font-semibold text-secondary">Paid {formatMoney(data.summary.paidMinor)}</span><span className="font-semibold text-primary">Due {formatMoney(data.summary.outstandingMinor)}</span></div></article>
-        <article className="rounded-xl bg-surface-container-low p-5 shadow-sm sm:p-6"><h2 className="text-title-lg">Category totals</h2><div className="mt-4 space-y-3">{data.summary.categoryTotals.slice(0, 5).map((item) => <div key={item.category}><div className="flex items-center justify-between gap-3 text-body-sm"><span>{EXPENSE_CATEGORY_LABELS[item.category]}</span><strong>{formatMoney(item.amountMinor)}</strong></div><div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-container-highest"><div className="h-full rounded-full bg-tertiary" style={{ width: `${Math.max(5, Math.round(Number(item.amountMinor) / maxCategory * 100))}%` }} /></div></div>)}</div></article>
+        <article className="rounded-xl bg-surface-container-low p-5 shadow-sm sm:p-6"><h2 className="text-title-lg">Category totals</h2><div className="mt-4 space-y-3">{data.summary.categoryTotals.slice(0, 5).map((item) => <div key={item.category}><div className="flex items-center justify-between gap-3 text-body-sm"><span>{EXPENSE_CATEGORY_LABELS[item.category]}</span><strong>{formatMoney(item.amountMinor)}</strong></div><div className="mt-1 h-1.5 overflow-hidden rounded-full bg-surface-container-highest"><div className="h-full rounded-full" style={{ width: `${Math.max(5, Math.round(Number(item.amountMinor) / maxCategory * 100))}%`, backgroundColor: EXPENSE_CATEGORY_BAR_COLORS[item.category] }} /></div></div>)}</div></article>
       </section>}
 
       <form action="/expenses" method="get" className="mt-7 rounded-xl bg-surface-container-low p-4 shadow-sm"><div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4"><label className="relative sm:col-span-2 xl:col-span-1"><span className="sr-only">Search expenses</span><WorkspaceIcon name="search" className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant" /><input name="q" defaultValue={query.q} placeholder="Search expenses, vendors, notes" className="w-full rounded-lg border border-transparent bg-surface px-10 py-3 text-body-sm outline-none focus:border-primary" /></label><Select name="paymentStatus" label="All payment statuses" value={query.paymentStatus ?? ""} options={Object.entries(EXPENSE_PAYMENT_STATUS_LABELS).map(([value, label]) => ({ value, label }))} /><Select name="category" label="All categories" value={query.category ?? ""} options={Object.entries(EXPENSE_CATEGORY_LABELS).map(([value, label]) => ({ value, label }))} /><Select name="eventId" label="All ceremonies" value={query.eventId ?? ""} options={data.eventOptions.map((event) => ({ value: event.id, label: event.name }))} /><label><span className="sr-only">From date</span><input type="date" name="dateFrom" defaultValue={query.dateFrom ?? ""} className={inputClass} /></label><label><span className="sr-only">To date</span><input type="date" name="dateTo" defaultValue={query.dateTo ?? ""} className={inputClass} /></label><button className="rounded-lg bg-primary px-5 py-3 text-body-sm font-semibold text-on-primary xl:col-span-2">Apply filters</button></div><div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-label-sm text-on-surface-variant"><span>{data.total} matching expense{data.total === 1 ? "" : "s"}</span>{Object.keys(values).length > 0 && <Link href="/expenses" className="font-semibold text-primary hover:underline">Clear filters</Link>}</div></form>
@@ -69,9 +69,57 @@ export default async function ExpensesPage({ searchParams }: { searchParams: Pro
   </WorkspaceShell>;
 }
 
-function Metric({ label, value, icon, tone = "default" }: { label: string; value: string; icon: Parameters<typeof WorkspaceIcon>[0]["name"]; tone?: "default" | "success" | "warning" }) { return <article className={`rounded-xl p-4 shadow-sm ${tone === "success" ? "bg-secondary-container" : tone === "warning" ? "bg-tertiary-fixed" : "bg-surface-container-low"}`}><div className="flex items-center justify-between gap-3"><p className="text-label-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">{label}</p><WorkspaceIcon name={icon} className={tone === "success" ? "text-secondary" : "text-tertiary"} /></div><p className="mt-3 font-serif text-headline-sm sm:text-headline-md">{value}</p></article>; }
+function Metric({ label, value, icon, tone }: {
+  label: string;
+  value: string;
+  icon: Parameters<typeof WorkspaceIcon>[0]["name"];
+  tone: "recorded" | "paid" | "outstanding" | "neutral";
+}) {
+  const styles = {
+    recorded: {
+      card: "border-outline-variant",
+      icon: "bg-surface-container-high text-primary",
+      value: "text-on-surface",
+    },
+    paid: {
+      card: "border-secondary",
+      icon: "bg-secondary-fixed text-secondary",
+      value: "text-on-surface",
+    },
+    outstanding: {
+      card: "border-primary",
+      icon: "bg-tertiary-fixed text-primary",
+      value: "text-primary",
+    },
+    neutral: {
+      card: "border-outline-variant",
+      icon: "bg-surface-container-high text-tertiary",
+      value: "text-on-surface",
+    },
+  }[tone];
+
+  return <article className={`rounded-xl border-b-4 bg-surface-container-low p-4 shadow-sm sm:p-5 ${styles.card}`}>
+    <div className="flex items-start justify-between gap-3">
+      <p className="pt-1 text-label-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">{label}</p>
+      <span className={`grid size-10 shrink-0 place-items-center rounded-lg ${styles.icon}`}><WorkspaceIcon name={icon} /></span>
+    </div>
+    <p className={`mt-4 font-serif text-headline-sm sm:text-headline-md ${styles.value}`}>{value}</p>
+  </article>;
+}
 function Select({ name, label, value, options }: { name: string; label: string; value: string; options: Array<{ value: string; label: string }> }) { return <label><span className="sr-only">{label}</span><select name={name} defaultValue={value} className={inputClass}><option value="">{label}</option>{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>; }
 function PageLink({ raw, page, disabled, children }: { raw: RawSearch; page: number; disabled: boolean; children: string }) { if (disabled) return <span className="rounded-lg px-4 py-2 text-body-sm text-outline">{children}</span>; const params = new URLSearchParams(); for (const [key, value] of Object.entries(raw)) { const item = Array.isArray(value) ? value[0] : value; if (item && key !== "page" && key !== "expenseId") params.set(key, item); } params.set("page", String(page)); return <Link href={`/expenses?${params}`} className="rounded-lg bg-surface-container px-4 py-2 text-body-sm font-semibold">{children}</Link>; }
 function percent(part: string, total: string) { return Number(total) ? Math.min(100, Math.round(Number(part) / Number(total) * 100)) : 0; }
 function formatMoney(value: string) { return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value) / 100); }
 const inputClass = "w-full rounded-lg border border-transparent bg-surface px-3 py-3 text-body-sm outline-none focus:border-primary";
+const EXPENSE_CATEGORY_BAR_COLORS: Record<keyof typeof EXPENSE_CATEGORY_LABELS, string> = {
+  VENUE: "var(--color-primary)",
+  CATERING: "#52634c",
+  PHOTOGRAPHY: "var(--color-tertiary-container)",
+  DECOR: "var(--color-primary-container)",
+  ATTIRE: "#e5c096",
+  ENTERTAINMENT: "var(--color-tertiary)",
+  INVITATIONS: "#9c7255",
+  TRANSPORT: "#65755f",
+  GIFTS: "#b8753c",
+  OTHER: "#94867b",
+};

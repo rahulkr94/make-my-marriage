@@ -127,6 +127,28 @@ export async function reviewPhoto(userId: string, weddingId: string, photoId: st
   return { photo: await serializePhoto(photo) };
 }
 
+export async function removePhoto(userId: string, weddingId: string, photoId: string) {
+  await connectToDatabase();
+  await requireAdmin(userId, weddingId);
+  assertObjectId(photoId, "Photo not found.");
+  const photo = await PhotoModel.findOneAndDelete({ _id: photoId, weddingId });
+  if (!photo) throw new AuthError("NOT_FOUND", "Photo not found.", 404);
+  const file = await FileModel.findOneAndUpdate(
+    { _id: photo.fileId, weddingId, kind: "PHOTO", status: "READY" },
+    { $set: { status: "DELETED" } },
+    { new: true },
+  ).select("+objectKey");
+  if (file) {
+    await deletePrivateObject(file.objectKey).catch((error: unknown) => {
+      console.error("Private photo cleanup failed", {
+        fileId: String(file._id),
+        error: error instanceof Error ? error.message : "Unknown storage error",
+      });
+    });
+  }
+  return { id: String(photo._id), removed: true as const };
+}
+
 export async function getGalleryLinkStatus(userId: string, weddingId: string) {
   await connectToDatabase();
   await requireAdmin(userId, weddingId);
@@ -196,7 +218,7 @@ async function requireMembership(userId: string, weddingId: string): Promise<Mem
   if (!membership) throw new AuthError("NOT_FOUND", "Wedding workspace not found.", 404);
   return membership as Membership;
 }
-async function requireAdmin(userId: string, weddingId: string) { const membership = await requireMembership(userId, weddingId); if (membership.role !== "ADMIN") throw new AuthError("FORBIDDEN", "Only Admins can manage the shared gallery link.", 403); return membership; }
+async function requireAdmin(userId: string, weddingId: string) { const membership = await requireMembership(userId, weddingId); if (membership.role !== "ADMIN") throw new AuthError("FORBIDDEN", "Only Admins can manage this gallery.", 403); return membership; }
 function mayModerate(membership: Membership) { return membership.role === "ADMIN" || (membership.role === "MANAGER" && membership.grants.includes("CAN_MODERATE_GALLERY")); }
 async function requireEvent(weddingId: string, eventId: string) { assertObjectId(eventId, "Event not found."); const event = await EventModel.exists({ _id: eventId, weddingId, deletedAt: null, status: { $ne: "CANCELLED" } }); if (!event) throw new AuthError("INVALID_EVENT", "Choose an active ceremony from this wedding.", 409); }
 async function requireGuestAccess(rawToken: string, eventId?: string) {

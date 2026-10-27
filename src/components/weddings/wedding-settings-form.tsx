@@ -176,7 +176,7 @@ export function WeddingSettingsForm({ weddingId, initialValues }: { weddingId: s
           <p className="hidden items-center gap-2 text-label-sm text-on-surface-variant sm:flex"><WorkspaceIcon name="lock" className="text-secondary" /> {saved ? "Saved just now" : "Saved to your workspace"}</p>
           <div className="flex w-full gap-3 sm:w-auto">
             <button type="button" onClick={() => router.push("/dashboard")} disabled={pending} className="flex-1 rounded-lg border border-outline-variant px-5 py-3 text-body-sm font-semibold transition-colors hover:border-primary disabled:opacity-50 sm:flex-none">Cancel</button>
-            <button type="submit" disabled={!dirty || pending || (changedKeys.includes("timeZone") && !confirmTimeZoneChange)} className="inline-flex flex-[1.4] items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-body-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-45 sm:flex-none">{pending ? "Saving changes…" : "Save changes"}<WorkspaceIcon name={pending ? "clock" : "check"} className="text-lg" /></button>
+            <button type="submit" disabled={!dirty || pending || (changedKeys.includes("timeZone") && !confirmTimeZoneChange)} className="inline-flex flex-[1.4] items-center justify-center gap-2 rounded-lg bg-primary px-6 py-3 text-body-sm font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-45 sm:flex-none">{pending ? "Saving changes…" : "Save changes"}<WorkspaceIcon name={pending ? "clock" : "check"} className="text-lg" /></button>
           </div>
         </div>
       </form>

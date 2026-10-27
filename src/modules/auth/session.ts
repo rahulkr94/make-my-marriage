@@ -42,11 +42,17 @@ export async function getCurrentUser() {
 
   await connectToDatabase();
   const now = new Date();
-  const session = await SessionModel.findOne({
-    sessionHash: hashToken(rawToken),
-    revokedAt: { $exists: false },
-    expiresAt: { $gt: now },
-  });
+  const [session] = await SessionModel.aggregate<{
+    _id: unknown;
+    lastSeenAt: Date;
+    user: { _id: unknown; name: string; emailDisplay: string; status: "ACTIVE" | "DISABLED" } | null;
+  }>([
+    { $match: { sessionHash: hashToken(rawToken), revokedAt: { $exists: false }, expiresAt: { $gt: now } } },
+    { $limit: 1 },
+    { $lookup: { from: UserModel.collection.name, localField: "userId", foreignField: "_id", as: "user" } },
+    { $set: { user: { $first: "$user" } } },
+    { $project: { _id: 1, lastSeenAt: 1, "user._id": 1, "user.name": 1, "user.emailDisplay": 1, "user.status": 1 } },
+  ]);
 
   if (!session || now.getTime() - session.lastSeenAt.getTime() > SESSION_IDLE_AGE_MS) {
     if (session) await SessionModel.updateOne({ _id: session._id }, { $set: { revokedAt: now } });
@@ -57,8 +63,8 @@ export async function getCurrentUser() {
     await SessionModel.updateOne({ _id: session._id }, { $set: { lastSeenAt: now } });
   }
 
-  const user = await UserModel.findOne({ _id: session.userId, status: "ACTIVE" });
-  if (!user) return null;
+  const user = session.user;
+  if (!user || user.status !== "ACTIVE") return null;
 
-  return { id: user.id, name: user.name, email: user.emailDisplay, status: user.status };
+  return { id: String(user._id), name: user.name, email: user.emailDisplay, status: user.status };
 }

@@ -53,10 +53,10 @@ export default async function VendorsPage({ searchParams }: { searchParams: Prom
         <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between"><div><p className="text-label-sm font-semibold uppercase tracking-[0.15em] text-primary">Finances · Wedding partners</p><h1 className="mt-2 font-serif text-headline-lg-mobile tracking-tight sm:text-headline-lg">Wedding vendors</h1><p className="mt-2 max-w-2xl text-body-md leading-7 text-on-surface-variant">Keep contact details, ceremony assignments, quotes, and payments organized in one place.</p></div><AddVendorButton /></section>
 
         <section aria-label="Vendor summary" className="mt-7 grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <Metric label="Total vendors" value={String(data.summary.count)} icon="users" />
-          <Metric label="Total quoted" value={formatMoney(data.summary.quotedMinor)} icon="payments" />
-          <Metric label="Total paid" value={formatMoney(data.summary.paidMinor)} icon="check" tone="success" />
-          <Metric label="Amount pending" value={formatMoney(data.summary.pendingMinor)} icon="clock" tone={data.summary.pendingMinor === "0" ? "success" : "warning"} />
+          <Metric label="Total vendors" value={String(data.summary.count)} icon="users" tone="neutral" />
+          <Metric label="Total quoted" value={formatMoney(data.summary.quotedMinor)} icon="payments" tone="quoted" />
+          <Metric label="Total paid" value={formatMoney(data.summary.paidMinor)} icon="check" tone="paid" />
+          <Metric label="Amount pending" value={formatMoney(data.summary.pendingMinor)} icon="clock" tone="pending" />
         </section>
         <p className="mt-4 flex items-start gap-2 rounded-lg bg-surface-container-low p-4 text-body-sm leading-6 text-on-surface-variant"><WorkspaceIcon name="payments" className="mt-0.5 text-primary" />Pending amounts are derived from manually entered quoted and paid values. Linked expenses remain independent.</p>
 
@@ -69,7 +69,20 @@ export default async function VendorsPage({ searchParams }: { searchParams: Prom
   </WorkspaceShell>;
 }
 
-function Metric({ label, value, icon, tone = "default" }: { label: string; value: string; icon: Parameters<typeof WorkspaceIcon>[0]["name"]; tone?: "default" | "success" | "warning" }) { return <article className={`rounded-xl p-4 shadow-sm ${tone === "success" ? "bg-secondary-container" : tone === "warning" ? "bg-tertiary-fixed" : "bg-surface-container-low"}`}><div className="flex items-center justify-between gap-3"><p className="text-label-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">{label}</p><WorkspaceIcon name={icon} className={tone === "success" ? "text-secondary" : "text-tertiary"} /></div><p className="mt-3 font-serif text-headline-sm sm:text-headline-md">{value}</p></article>; }
+function Metric({ label, value, icon, tone }: {
+  label: string;
+  value: string;
+  icon: Parameters<typeof WorkspaceIcon>[0]["name"];
+  tone: "neutral" | "quoted" | "paid" | "pending";
+}) {
+  const styles = {
+    neutral: { card: "border-outline-variant", icon: "bg-surface-container-high text-tertiary", value: "text-on-surface" },
+    quoted: { card: "border-outline-variant", icon: "bg-surface-container-high text-primary", value: "text-on-surface" },
+    paid: { card: "border-secondary", icon: "bg-secondary-fixed text-secondary", value: "text-on-surface" },
+    pending: { card: "border-primary", icon: "bg-tertiary-fixed text-primary", value: "text-primary" },
+  }[tone];
+  return <article className={`rounded-xl border-b-4 bg-surface-container-low p-4 shadow-sm sm:p-5 ${styles.card}`}><div className="flex items-start justify-between gap-3"><p className="pt-1 text-label-sm font-semibold uppercase tracking-[0.08em] text-on-surface-variant">{label}</p><span className={`grid size-10 shrink-0 place-items-center rounded-lg ${styles.icon}`}><WorkspaceIcon name={icon} /></span></div><p className={`mt-4 font-serif text-headline-sm sm:text-headline-md ${styles.value}`}>{value}</p></article>;
+}
 function Select({ name, label, value, options }: { name: string; label: string; value: string; options: Array<{ value: string; label: string }> }) { return <label><span className="sr-only">{label}</span><select name={name} defaultValue={value} className={inputClass}>{name !== "sort" && <option value="">{label}</option>}{options.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>; }
 function PageLink({ raw, page, disabled, children }: { raw: RawSearch; page: number; disabled: boolean; children: string }) { if (disabled) return <span className="rounded-lg px-4 py-2 text-body-sm text-outline">{children}</span>; const params = new URLSearchParams(); for (const [key, value] of Object.entries(raw)) { const item = Array.isArray(value) ? value[0] : value; if (item && key !== "page" && key !== "vendorId") params.set(key, item); } params.set("page", String(page)); return <Link href={`/vendors?${params}`} className="rounded-lg bg-surface-container px-4 py-2 text-body-sm font-semibold">{children}</Link>; }
 function formatMoney(value: string) { return new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(Number(value) / 100); }

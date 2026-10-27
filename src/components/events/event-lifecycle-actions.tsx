@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { WorkspaceIcon } from "@/components/weddings/workspace-icon";
+import { useModalA11y } from "@/shared/use-modal-a11y";
 
 type EventStatus = "DRAFT" | "PUBLISHED" | "CANCELLED";
 type ConfirmAction = "cancel" | "remove" | null;
@@ -19,7 +20,7 @@ export function EventLifecycleActions({ weddingId, eventId, status, returnToEven
   const [confirmation, setConfirmation] = useState<ConfirmAction>(null);
   const [pending, setPending] = useState<"cancel" | "restore" | "remove" | null>(null);
   const [error, setError] = useState("");
-  const size = compact ? "px-3 py-2 text-label-md" : "px-4 py-2.5 text-body-sm";
+  const size = compact ? "h-10 px-3 text-label-md" : "min-h-11 px-4 py-2.5 text-body-sm";
 
   async function change(action: "cancel" | "restore" | "remove") {
     if (pending) return;
@@ -44,8 +45,8 @@ export function EventLifecycleActions({ weddingId, eventId, status, returnToEven
   }
 
   return <>
-    <span className="inline-flex flex-col items-stretch gap-1">
-      <span className="inline-flex flex-wrap gap-2">
+    <span className="inline-flex self-start flex-col items-stretch gap-1">
+      <span className="inline-flex flex-wrap items-start gap-2">
         {status === "PUBLISHED" && <button type="button" onClick={() => { setError(""); setConfirmation("cancel"); }} className={`inline-flex items-center justify-center gap-2 rounded-lg bg-tertiary-fixed font-semibold text-on-tertiary-fixed hover:brightness-95 ${size}`}><WorkspaceIcon name="close" />Cancel event</button>}
         {status === "CANCELLED" && <button type="button" onClick={() => change("restore")} disabled={pending !== null} className={`inline-flex items-center justify-center gap-2 rounded-lg bg-secondary-container font-semibold text-on-secondary-container hover:bg-secondary-fixed disabled:opacity-50 ${size}`}><WorkspaceIcon name={pending === "restore" ? "clock" : "undo"} />{pending === "restore" ? "Restoring…" : "Restore to draft"}</button>}
         <button type="button" onClick={() => { setError(""); setConfirmation("remove"); }} className={`inline-flex items-center justify-center gap-2 rounded-lg bg-error-container font-semibold text-on-error-container hover:brightness-95 ${size}`}><WorkspaceIcon name="trash" />Remove</button>
@@ -58,8 +59,9 @@ export function EventLifecycleActions({ weddingId, eventId, status, returnToEven
 
 function ConfirmationDialog({ action, pending, error, onClose, onConfirm }: { action: Exclude<ConfirmAction, null>; pending: boolean; error: string; onClose: () => void; onConfirm: () => void }) {
   const removing = action === "remove";
+  const dialogRef = useModalA11y(onClose);
   return <div className="fixed inset-0 z-50 flex items-end justify-center bg-inverse-surface/45 p-0 backdrop-blur-sm sm:items-center sm:p-5" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}>
-    <section role="alertdialog" aria-modal="true" aria-labelledby={`event-${action}-title`} className="w-full max-w-md rounded-t-2xl bg-surface p-6 shadow-2xl sm:rounded-xl sm:p-8">
+    <section ref={dialogRef} tabIndex={-1} role="alertdialog" aria-modal="true" aria-labelledby={`event-${action}-title`} className="w-full max-w-md rounded-t-2xl bg-surface p-6 shadow-2xl sm:rounded-xl sm:p-8">
       <span className={`flex h-12 w-12 items-center justify-center rounded-full ${removing ? "bg-error-container text-on-error-container" : "bg-tertiary-fixed text-on-tertiary-fixed"}`}><WorkspaceIcon name={removing ? "trash" : "close"} className="text-2xl" /></span>
       <p className="mt-5 text-label-sm font-semibold uppercase tracking-[0.12em] text-tertiary">Ceremony lifecycle</p>
       <h2 id={`event-${action}-title`} className="mt-1 font-serif text-headline-sm">{removing ? "Remove this event?" : "Cancel this event?"}</h2>

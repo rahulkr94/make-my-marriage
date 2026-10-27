@@ -34,7 +34,7 @@ export function Icon({ name, className = "" }: {
 }
 export function Brand() {
     return <Link href="/" aria-label="Make My Marriage home" className="inline-flex items-center gap-3 shrink-0">
-    <svg aria-hidden="true" width="38" height="38" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="#7e6348"/><path d="M24 10C24 18 16 24 16 24s8 2 8 14c0-12 8-14 8-14s-8-6-8-14Z" fill="#7e6348"/><circle cx="24" cy="24" r="2.5" fill="#fff8f3"/></svg>
+    <svg aria-hidden="true" width="38" height="38" viewBox="0 0 48 48" fill="none"><circle cx="24" cy="24" r="22" stroke="#964400"/><path d="M24 10C24 18 16 24 16 24s8 2 8 14c0-12 8-14 8-14s-8-6-8-14Z" fill="#964400"/><circle cx="24" cy="24" r="2.5" fill="#fff8f3"/></svg>
     <span><span className="block font-serif text-lg sm:text-xl leading-tight">Make My <span className="text-primary">Marriage</span></span><span className="block text-[8px] tracking-[0.24em] mt-1 text-on-surface-variant uppercase">Wedding atelier</span></span>
   </Link>;
 }

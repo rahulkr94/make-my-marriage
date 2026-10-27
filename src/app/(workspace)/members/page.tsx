@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { MembersWorkspace } from "@/components/members/members-workspace";
+import { WorkspaceShell } from "@/components/workspace/workspace-shell";
 import { getCurrentUser } from "@/modules/auth/session";
 import { listWeddingMembers } from "@/modules/members/service";
 import { getWorkspaceForUser } from "@/modules/weddings/service";
@@ -15,5 +16,5 @@ export default async function MembersPage() {
   if (workspace.membership.role !== "ADMIN") redirect("/dashboard");
 
   const data = await listWeddingMembers(user.id, workspace.wedding.id);
-  return <MembersWorkspace user={user} wedding={workspace.wedding} members={data.members} invitations={data.invitations} />;
+  return <WorkspaceShell user={user} wedding={workspace.wedding} role={workspace.membership.role} active="members" title="Members"><MembersWorkspace user={user} wedding={workspace.wedding} members={data.members} invitations={data.invitations} /></WorkspaceShell>;
 }

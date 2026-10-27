@@ -1,7 +1,7 @@
 # Make My Marriage — Project Status
 
-**Last updated:** 26 October 2026
-**Current phase:** Gallery implementation complete; Reminders and launch planned next
+**Last updated:** 27 October 2026
+**Current phase:** Launch readiness in progress; production rollout checks remain
 **Overall status:** Active development
 
 ## Purpose
@@ -27,7 +27,7 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 | Tasks | Complete | Planner-created work items, same-wedding assignees and ceremony context, due dates, priorities, role-scoped status updates, dashboard attention states, and the combined wedding timeline. |
 | Finances | Complete | Actual expenses, payment history, vendor records, ceremony assignments, quotes, linked expenses, and private receipt, bill, contract, quotation, and supporting-document attachments are complete. Deployment requires private R2 credentials and bucket CORS configuration. |
 | Gallery | Complete | Member and invitation-scoped guest uploads, private R2 storage, ceremony classification, moderation, approved-only shared gallery access, token rotation/revocation, and QR sharing are complete. |
-| Reminders and launch | Not started | Scheduled emails, final accessibility checks, and production setup. |
+| Reminders and launch | In progress | Reminder delivery, launch configuration validation, error states, crawl controls, security headers, and core keyboard dialog behavior are complete. Production environment and provider smoke checks remain. |
 
 ## Completed work
 
@@ -446,8 +446,8 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
   signature before making a document visible. Download URLs expire after five
   minutes; raw object keys never reach the browser or public guest/gallery APIs.
 - Documented the four required R2 environment variables and browser PUT CORS
-  policy. Real provider upload/download verification remains a deployment check
-  because no R2 credentials are configured in the local environment.
+  policy. The local R2 configuration was added later for gallery uploads;
+  financial attachment upload/download remains a separate production smoke test.
 - Passed ESLint, TypeScript, 86 non-database tests, eight isolated MongoDB
   expense/vendor/document integration tests, the production build, development
   index synchronization, and production dependency audit. Reviewed expense and
@@ -478,15 +478,137 @@ technical requirements in `PRD.md`, `SYSTEM_DESIGN.md`, `DATABASE_DESIGN.md`, an
 - Passed ESLint, TypeScript, 90 non-database tests, 12 relevant isolated MongoDB
   gallery/member/document integration tests, the production build, and index
   synchronization. Reviewed the desktop empty gallery, upload dialog, share
-  dialog, navigation, and browser console with no application errors. Real R2
-  transfer verification remains a deployment check because local R2 credentials
-  are not configured.
+  dialog, navigation, and browser console with no application errors. A real
+  local R2 gallery upload was subsequently confirmed; production-origin CORS and
+  signed transfer checks remain part of launch verification.
+
+### Wedding gallery — Full-screen preview and Admin deletion (27 October 2026)
+
+- Added a visible preview control to every gallery photo and an accessible
+  full-screen lightbox that preserves the active status and ceremony filters.
+- Added circular previous and next navigation, left and right keyboard controls,
+  a live position counter, photo source, upload date, and optional caption.
+  Escape closes the preview, focus remains contained while it is open, body
+  scrolling is locked, and focus returns to the originating preview button.
+- Replaced the eye preview symbol with a full-screen expand icon. Added an
+  Admin-only permanent delete action with a confirmation dialog; deletion
+  removes the photo from workspace and shared-gallery results, marks its file
+  metadata deleted, and attempts private R2 object cleanup. Managers retain
+  moderation access without receiving photo-deletion permission.
+- Verified mouse and keyboard preview navigation, the Admin-only delete control,
+  and the non-destructive confirmation/cancel flow across live gallery photos in
+  the local browser. Passed ESLint, TypeScript, 96 non-database tests, and the
+  production build. The isolated gallery database test remains available when a
+  test MongoDB connection is configured.
+
+### Warm Editorial Nuptials design system (27 October 2026)
+
+- Applied the shared warm editorial theme across marketing, account, workspace,
+  invitation, and public guest experiences through the global Tailwind tokens:
+  warm ivory surfaces, accessible terracotta primary actions, restrained olive
+  and brass accents, warmer outlines, measured radii, and low-contrast ambient
+  elevation.
+- Preserved the Playfair Display and Plus Jakarta Sans hierarchy, aligned
+  headline weights and label tracking with the supplied typography scale, and
+  connected existing expense, vendor, dashboard, and gallery accents to the
+  semantic palette so future token changes remain consistent.
+- Updated the brand mark, invitation QR colors, invitation email action, fatal
+  error state, selection color, placeholders, and primary hover treatment to use
+  the same system. Passed ESLint, TypeScript, 96 non-database tests, and the
+  production build; reviewed the homepage and signed-in workspace in the local
+  browser.
+
+### Cross-workspace expense UX alignment (27 October 2026)
+
+- Extended the Expense workspace’s visual hierarchy to Events, Tasks, Guest
+  Invitations, RSVP, Guests, and Members with one reusable summary metric:
+  semantic bottom borders, contained icon tiles, editorial type, and consistent
+  warm surface elevation now identify neutral, active, completed, attention, and
+  error states.
+- Aligned dense lists and tables with the Expense presentation using quiet
+  surface rows, warmer dividers, clearer hover feedback, compact action icons,
+  and responsive mobile cards. Added ceremony-type and invitation icons, event
+  and task status rails, RSVP response colors, and matching member/invitation
+  list treatments without changing permissions or workflows.
+- Moved Members from its legacy standalone navigation and header onto the shared
+  workspace shell, aligning its sidebar, mobile navigation, breadcrumb, active
+  state, 1320-pixel content grid, headings, and responsive page spacing with the
+  rest of the signed-in application.
+- Reviewed all six signed-in pages against live local data in the browser.
+  Passed ESLint, TypeScript, 96 non-database tests, and the production build.
+
+### Workspace navigation performance (27 October 2026)
+
+- Reduced the shared setup for every authenticated workspace page from four
+  sequential MongoDB reads to two aggregate reads by joining the active session
+  to its user and the active membership to its wedding.
+- Replaced the faint content-only route fallback with a responsive full-workspace
+  skeleton that preserves the desktop sidebar, mobile header, page heading,
+  summary cards, filters, and main content while the destination page loads.
+  This removes the blank-looking frame during dynamic navigation and local
+  first-route compilation.
+- Verified authenticated navigation and both aggregate lookups against live local
+  data. Passed ESLint, TypeScript, 96 non-database tests, and the production
+  build. First visits in `next dev` can still pause while Webpack compiles an
+  unvisited route; production serves the prebuilt route bundle.
+
+### Notifications and scheduled reminders (26 October 2026)
+
+- Applied the approved Stitch direction to responsive `/notifications` and
+  `/notifications/settings` workspaces. Admins and Managers can review scheduled,
+  processing, sent, failed, and cancelled deliveries; filter the history; retry
+  failed messages; and configure reminder rules, delivery times, and quiet hours.
+- Added event reminders for active assigned guests, RSVP reminders for invited
+  guests who have not responded, task-due reminders for current assignees,
+  overdue-task digests, and optional guest-photo moderation digests. RSVP emails
+  direct guests back to their existing private invitation because raw invitation
+  tokens are never stored or reconstructed.
+- Added wedding-time-zone schedule calculation, stable idempotency keys,
+  duplicate-safe materialization, stale-delivery cancellation, recipient and
+  source revalidation immediately before send, bounded batches, five-minute
+  leases, and at most three delivery attempts with backoff. Resend provider IDs
+  and sanitized failure messages are retained for planner-visible history.
+- Added authenticated planner APIs for listing, settings, and retry, plus a
+  `CRON_SECRET`-protected worker route that returns only aggregate results. Added
+  controlled notification indexes and a Vercel production cron configuration.
+  The checked-in once-daily cadence deploys on Vercel Hobby; precise configured
+  send times require a more frequent scheduler, available on Vercel Pro or from
+  another trusted scheduler calling the same protected endpoint.
+- Passed ESLint, TypeScript, 94 non-database tests, and the production build.
+  Reviewed live-data desktop and 390-pixel mobile notification and settings
+  layouts with no browser console errors. No worker invocation or email delivery
+  was performed during UI verification.
+
+### Launch readiness — Release 1 (26 October 2026)
+
+- Added branded loading, not-found, route-error, and root-error states. Added
+  homepage metadata, a public-only sitemap, crawl exclusions for private and
+  account routes, no-store headers for tokenized experiences, and baseline
+  browser security headers while suppressing the framework disclosure header.
+- Added a workspace skip link and improved the tall desktop sidebar so navigation
+  scrolls independently. Standardized custom modal keyboard behavior across
+  events, guests, invitations, members, RSVP, tasks, finance, gallery, and
+  notifications: initial focus, focus containment, Escape close, background
+  scroll locking, and focus restoration now follow one shared implementation.
+- Added `npm run launch:validate-env`, which validates the production URL,
+  MongoDB, Resend, R2, and scheduler configuration without printing secret
+  values. Added `docs/LAUNCH_CHECKLIST.md` for configuration, provider smoke
+  tests, accessibility, release, rollback, and post-deployment verification.
+- Synchronized all application indexes in the configured development database
+  and confirmed the production dependency audit reports zero vulnerabilities.
+  The environment validator correctly identifies the local-only `APP_URL` and
+  missing `CRON_SECRET` as launch blockers.
+- Passed ESLint, TypeScript, 96 non-database tests, the production build, header
+  and crawl-response checks, and focused desktop/mobile browser checks for the
+  404 state, sidebar scrolling, and modal focus behavior. Provider smoke tests
+  remain part of the production rollout.
 
 ## Current focus
 
-The next planned milestone is **Reminders and launch**: scheduled notification
-delivery, final accessibility and responsive checks, and production readiness.
-Start only when explicitly requested.
+Complete the **production rollout checks**: set the public `APP_URL` and a strong
+`CRON_SECRET`, choose the scheduler cadence, run the production configuration
+validator, verify controlled Resend and R2 flows in a preview deployment, finish
+the cross-browser keyboard pass, then promote the verified build to production.
 
 ## Update policy
 

@@ -31,5 +31,5 @@ export function EventPublishButton({ weddingId, eventId, compact = false }: { we
     }
   }
 
-  return <span className="inline-flex flex-col items-stretch gap-1"><button type="button" onClick={publish} disabled={pending} className={`inline-flex items-center justify-center gap-2 rounded-lg bg-secondary-container font-semibold text-on-secondary-container hover:bg-secondary-fixed disabled:opacity-50 ${compact ? "px-3 py-2 text-label-md" : "px-5 py-3 text-body-sm"}`}><WorkspaceIcon name={pending ? "clock" : "check"} />{pending ? "Publishing…" : "Publish event"}</button>{error && <span role="alert" className="max-w-56 text-label-sm text-error">{error}</span>}</span>;
+  return <span className="inline-flex self-start flex-col items-stretch gap-1"><button type="button" onClick={publish} disabled={pending} className={`inline-flex items-center justify-center gap-2 rounded-lg bg-secondary-container font-semibold text-on-secondary-container hover:bg-secondary-fixed disabled:opacity-50 ${compact ? "h-10 px-3 text-label-md" : "min-h-11 px-5 py-2.5 text-body-sm"}`}><WorkspaceIcon name={pending ? "clock" : "check"} />{pending ? "Publishing…" : "Publish event"}</button>{error && <span role="alert" className="max-w-56 text-label-sm text-error">{error}</span>}</span>;
 }

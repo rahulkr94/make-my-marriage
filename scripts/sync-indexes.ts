@@ -12,6 +12,7 @@ import { TaskModel } from "../src/modules/tasks/models";
 import { ExpenseModel, VendorModel } from "../src/modules/finance/models";
 import { DocumentModel, FileModel } from "../src/modules/documents/models";
 import { PhotoModel } from "../src/modules/gallery/models";
+import { NotificationModel, NotificationSettingsModel } from "../src/modules/notifications/models";
 
 loadEnvConfig(process.cwd());
 
@@ -36,6 +37,8 @@ async function main() {
     FileModel.syncIndexes(),
     DocumentModel.syncIndexes(),
     PhotoModel.syncIndexes(),
+    NotificationModel.syncIndexes(),
+    NotificationSettingsModel.syncIndexes(),
   ]);
 
   console.log("Application indexes synchronized.", results);

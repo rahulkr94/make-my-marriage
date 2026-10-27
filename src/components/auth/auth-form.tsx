@@ -96,7 +96,7 @@ export function AuthForm({ variant, token, nextPath = "/dashboard", initialEmail
       {error && <p role="alert" className="rounded border border-error/25 bg-error-container px-4 py-3 text-body-sm text-on-error-container">{error}</p>}
       {message && <p role="status" className="rounded border border-secondary/25 bg-secondary-container px-4 py-3 text-body-sm text-on-secondary-container">{message}</p>}
 
-      <button disabled={pending || (variant === "reset" && !token)} type="submit" className="w-full rounded bg-primary px-5 py-3.5 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-55">
+      <button disabled={pending || (variant === "reset" && !token)} type="submit" className="w-full rounded bg-primary px-5 py-3.5 text-body-md font-semibold text-on-primary transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-55">
         {pending ? content[variant].pending : content[variant].submit}
       </button>
 

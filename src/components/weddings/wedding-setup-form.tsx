@@ -126,7 +126,7 @@ export function WeddingSetupForm() {
 
       <div className="flex flex-col gap-4 pt-1 sm:flex-row sm:items-center sm:justify-between">
         <p className="order-2 flex items-center gap-2 text-body-sm text-on-surface-variant sm:order-1"><WorkspaceIcon name="lock" className="text-secondary" /> Member-only workspace · One active wedding</p>
-        <button disabled={pending} type="submit" className="order-1 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-title-md font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-container disabled:cursor-not-allowed disabled:opacity-55 sm:order-2 sm:w-auto">
+        <button disabled={pending} type="submit" className="order-1 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-primary px-7 py-3.5 text-title-md font-semibold text-on-primary shadow-sm transition-colors hover:bg-primary-hover disabled:cursor-not-allowed disabled:opacity-55 sm:order-2 sm:w-auto">
           Create wedding workspace <WorkspaceIcon name="arrow" className="text-lg" />
         </button>
       </div>

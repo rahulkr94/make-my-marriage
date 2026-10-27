@@ -27,7 +27,7 @@ export async function sendGuestInvitationEmail(input: {
     from,
     to: input.email,
     subject: `You’re invited to ${input.coupleName}’s wedding`,
-    html: `<div style="font-family:Arial,sans-serif;color:#1d1b18;line-height:1.7;max-width:620px;margin:auto"><p>Dear ${safeGuestName},</p><p><strong>${safeCoupleName}</strong> would be delighted to celebrate their wedding with you.</p><p><a href="${safeUrl}" style="display:inline-block;background:#644b32;color:#fff;padding:12px 18px;text-decoration:none;border-radius:6px">Open your private invitation</a></p><p>This private link contains the ceremonies selected for you. Please keep it safe and avoid posting it publicly.</p><p>With warmth,<br>${safeCoupleName}</p></div>`,
+    html: `<div style="font-family:Arial,sans-serif;color:#1d1b18;line-height:1.7;max-width:620px;margin:auto"><p>Dear ${safeGuestName},</p><p><strong>${safeCoupleName}</strong> would be delighted to celebrate their wedding with you.</p><p><a href="${safeUrl}" style="display:inline-block;background:#964400;color:#fff;padding:12px 18px;text-decoration:none;border-radius:4px">Open your private invitation</a></p><p>This private link contains the ceremonies selected for you. Please keep it safe and avoid posting it publicly.</p><p>With warmth,<br>${safeCoupleName}</p></div>`,
   });
   if (result.error) {
     console.error("Guest invitation email delivery failed", { name: result.error.name, message: result.error.message });

@@ -35,7 +35,7 @@ export default async function Home() {
         </p>
 
     <div className="flex flex-col sm:flex-row items-center gap-space-md w-full sm:w-auto">
-    <LaunchButton href={workspaceHref} className="w-full sm:w-auto inline-flex items-center justify-center bg-primary text-on-primary font-label-md text-label-md px-space-xl py-3.5 rounded-lg hover:bg-primary-container shadow-md transition-all text-center">
+    <LaunchButton href={workspaceHref} className="w-full sm:w-auto inline-flex items-center justify-center bg-primary text-on-primary font-label-md text-label-md px-space-xl py-3.5 rounded-lg hover:bg-primary-hover shadow-md transition-all text-center">
             {workspaceLabel ?? "Create your wedding"}
           </LaunchButton>
     <a className="w-full sm:w-auto inline-flex items-center justify-center gap-space-xs bg-surface-container-low text-on-surface font-label-md text-label-md px-space-lg py-3.5 rounded-lg hover:bg-surface-container shadow-sm transition-all text-center" href="#how-it-works">
@@ -259,7 +259,7 @@ export default async function Home() {
     <span className="font-body-sm text-body-sm text-on-surface-variant">(Self + 1)</span>
     </div>
     </div>
-    <a className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-space-sm bg-primary text-on-primary rounded font-label-sm text-label-sm hover:bg-primary-container transition-all" href="https://www.google.com/maps/search/?api=1&amp;query=The+Oberoi+Udaivilas+Udaipur" target="_blank" rel="noopener noreferrer" aria-label="View the sample venue on Google Maps (opens a new tab)">
+    <a className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-space-sm bg-primary text-on-primary rounded font-label-sm text-label-sm hover:bg-primary-hover transition-all" href="https://www.google.com/maps/search/?api=1&amp;query=The+Oberoi+Udaivilas+Udaipur" target="_blank" rel="noopener noreferrer" aria-label="View the sample venue on Google Maps (opens a new tab)">
     <Icon name="map" className=" text-[16px]"/>
     <span className="">Get Venue Directions</span>
     </a>
@@ -689,7 +689,7 @@ export default async function Home() {
     <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl mb-space-xl">
           A thoughtful home for your plans, your people, and all the little things that make this celebration yours.
         </p>
-    <LaunchButton href={workspaceHref} className="inline-flex items-center justify-center bg-primary text-on-primary font-label-md text-label-md px-space-xl py-4 rounded-lg hover:bg-primary-container shadow-lg transition-all">
+    <LaunchButton href={workspaceHref} className="inline-flex items-center justify-center bg-primary text-on-primary font-label-md text-label-md px-space-xl py-4 rounded-lg hover:bg-primary-hover shadow-lg transition-all">
           {workspaceLabel ?? "Create your wedding"}
         </LaunchButton>
     <div className="flex flex-wrap items-center justify-center gap-space-md mt-space-md text-on-surface-variant font-label-sm text-label-sm">
